@@ -1,0 +1,180 @@
+/* General Page Styling */
+.admin-profile {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fc;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Header */
+.admin-profile h2 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Profile Information Cards */
+.profile-sections {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.profile-card {
+    flex: 1;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.profile-card h3 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.profile-card button {
+    background-color: #4c5fd5;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.profile-card button:hover {
+    background-color: #3a4cb0;
+}
+
+/* Profile Details Section */
+.profile-details {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.profile-details .detail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.profile-details .detail:last-child {
+    border-bottom: none;
+}
+
+.detail label {
+    font-weight: bold;
+    color: #333;
+}
+
+.detail .edit {
+    color: #4c5fd5;
+    cursor: pointer;
+}
+
+/* System Access Section */
+.system-access {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.system-access h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.system-access ul {
+    list-style: none;
+    padding: 0;
+}
+
+.system-access li {
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.system-access li:last-child {
+    border-bottom: none;
+}
+
+/* Recent Activity Section */
+.recent-activity {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.recent-activity h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activity-table th, .activity-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.activity-table th {
+    background: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-sections {
+        flex-direction: column;
+    }
+}
+
+/* Add to your main CSS file */
+.profile-filters {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-tab {
+  transition: all 0.2s ease;
+}
+
+.profile-tab:hover {
+  color: #007bff !important;
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+  .profile-filters {
+    padding: 8px 0;
+  }
+  
+  .profile-tab {
+    padding: 6px 12px !important;
+    margin-right: 10px !important;
+    font-size: 13px !important;
+  }
+}

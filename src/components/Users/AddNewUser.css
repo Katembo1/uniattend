@@ -1,0 +1,88 @@
+.add-user-container {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  
+  .add-user-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 5px;
+  }
+  
+  button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+  }
+  
+  .success-message {
+    color: green;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  
+
+  /* ... your other styles ... */
+
+.breadcrumbs-container {
+    margin-bottom: 20px; /* Add space below breadcrumbs */
+  }
+  
+  .breadcrumbs {
+    font-size: 1.2em; /* Make it look like a heading */
+    font-weight: bold; /* Make it bold */
+    color: #333; /* Dark gray color */
+  }
+  
+  .breadcrumbs a {
+    text-decoration: none;
+    color: #007bff; /* Blue for links */
+    font-weight: normal; /* Normal font weight for links */
+  }
+  
+  .breadcrumbs a:hover {
+    text-decoration: underline;
+  }
+  
+  .breadcrumbs span {
+    color: #333; /* Color for the "Add New User" text */
+  }
+  
+  /* Optional: Style the ">" separator */
+  .breadcrumbs > *:not(:last-child)::after {
+    content: " > ";
+    color: #333;
+  }
