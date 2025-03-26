@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import AddBeacon from './components/add_beacon';
 import AddVenue from './components/add_venue';
 import Dashboard from './components/dashboard';
@@ -15,8 +15,15 @@ import ScheduleImport from './components/importschedule';
 import ViewList from './components/viewlist';
 import AdminProfile from "./components/AdminProfile";
 import './App.css';
-
+import { useEffect } from 'react';
 function App() {
+
+  useEffect(() => {
+    document.title = 'Tech High '; // Set title here
+    return () => {
+      document.title = 'Tech High'; // Reset on unmount if needed.
+    };
+  }, []);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
