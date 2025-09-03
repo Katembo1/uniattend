@@ -42,11 +42,9 @@ const Sidebar = () => {
         }
 
         .sidebar h2 {
+            color: var(--sidebar-text);
+            margin-bottom: 15px;
             font-size: 1.5rem;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 2rem;
-            color: rgba(255,255,255,0.7);
         }
 
         .sidebar h3 {
@@ -60,16 +58,16 @@ const Sidebar = () => {
         .sidebar ul {
             list-style: none;
             padding: 0;
-            margin: 0;
+            margin: 0 0 15px 0;
         }
 
         .sidebar ul li a {
             display: block;
-            padding: 10px 15px;
+            padding: 5px 10px;
             color: var(--sidebar-text);
             text-decoration: none;
             border-radius: 8px;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             transition: background-color 0.2s, color 0.2s;
         }
 
