@@ -37,10 +37,11 @@ function App() {
         <header className="app-header">
           <button className="hamburger-menu" onClick={toggleMenu}>
             ☰
+            <Sidebar/>
           </button>
         </header>
 
-        {isMenuOpen && <Sidebar toggleMenu={toggleMenu} />} {/* Conditionally render the Sidebar */}
+        {isMenuOpen || <Sidebar toggleMenu={toggleMenu} />} {/* Conditionally render the Sidebar */}
 
         <main className="app-content">
           <Routes>
