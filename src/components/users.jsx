@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css';
+import Sidebar from './sidebar';
 
 function Users() {
     const [activeFilter, setActiveFilter] = useState('All Users');
@@ -30,22 +31,7 @@ function Users() {
     return (
         <div className="dashboard-container">
             {/* Sidebar Navigation - Only this navigation will be visible */}
-            <div className="sidebar">
-                <h2>UniAttend</h2>
-                <ul>
-                    <li><Link to="/dashboard">Dashboard</Link></li>
-                    <li className="active">User Management</li>
-                    <li><Link to="/venues">Venues & Beacons</Link></li>
-                    <li><Link to="/scheduling">Class Scheduling</Link></li>
-                    <li><Link to="/reports">Attendance Reports</Link></li>
-                </ul>
-                <h3>ADMIN</h3>
-                <ul>
-                    <li><Link to="/settings">Settings</Link></li>
-                    <li><Link to="/security">Security</Link></li>
-                    <li><Link to="/admin-profile">Admin Profile</Link></li>
-                </ul>
-            </div>
+            <Sidebar/>
 
             {/* Main Content Area */}
             <div className="content">

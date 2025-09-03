@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+
 import './css/Styles.css';
+import Sidebar from './sidebar';
 
 function Dashboard() {
   const [counts, setCounts] = useState({
@@ -46,29 +47,8 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      <div className="sidebar">
-        <h2>UniAttend</h2>
-        <ul>
-          <li className="active">Dashboard</li>
-          <li><Link to="/users">User Management</Link></li>
-          <li><Link to="/venues">Venues & Beacons</Link></li>
-          <li><Link to="/scheduling">Class Scheduling</Link></li>
-          <li><Link to="/reports">Attendance Reports</Link></li>
-        </ul>
-        <h3>ADMIN</h3>
-        <ul>
-          <li><Link to="/settings">Settings</Link></li>
-          <li><Link to="/security">Security</Link></li>
-          <li><Link to="/admin-profile">Admin Profile</Link></li>
-        </ul>
-        
-        <div className="admin-user">
-  <img src="placeholder-user-avatar.png" alt="Admin User" className="admin-avatar" />
-  Admin User<br />
-  System Administrator
-</div>
-      </div>
-
+   
+<Sidebar/>
       <div className="content">
         <h1>Dashboard Overview</h1>
         <div className="dashboard-overview">

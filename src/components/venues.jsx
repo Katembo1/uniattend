@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css'
+import Sidebar from './sidebar';
 
 function Venues() {
     const [activeFilter, setActiveFilter] = useState('All Locations');
@@ -35,29 +36,7 @@ function Venues() {
     return (
         <div className="dashboard-container">
             {/* Sidebar - Using consistent classes */}
-            <div className="sidebar">
-                <h2>UniAttend</h2>
-                <ul>
-                    <li><Link to="/dashboard">Dashboard</Link></li>
-                    <li><Link to="/users">User Management</Link></li>
-                    <li className="active">Venues & Beacons</li>
-                    <li><Link to="/scheduling">Class Scheduling</Link></li>
-                    <li><Link to="/reports">Attendance Reports</Link></li>
-                </ul>
-                
-                <h3>ADMIN</h3>
-                <ul>
-                    <li><Link to="/settings">Settings</Link></li>
-                    <li><Link to="/security">Security</Link></li>
-                    <li><Link to="/admin-profile">Admin Profile</Link></li>
-                </ul>
-                
-                <div className="admin-user">
-          <img src="placeholder-user-avatar.png" alt="Admin User" className="admin-avatar" />
-          Admin User<br />
-          System Administrator
-        </div>
-            </div>
+          <Sidebar/>
 
             {/* Main Content */}
             <div className="content">
