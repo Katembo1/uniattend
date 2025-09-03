@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Sidebar from './components/sidebar'; // Import the Sidebar component
 import AddBeacon from './components/add_beacon';
 import AddVenue from './components/add_venue';
 import Dashboard from './components/dashboard';
@@ -15,15 +16,15 @@ import ScheduleImport from './components/importschedule';
 import ViewList from './components/viewlist';
 import AdminProfile from "./components/AdminProfile";
 import './App.css';
-import { useEffect } from 'react';
-function App() {
 
+function App() {
   useEffect(() => {
-    document.title = 'Tech High '; // Set title here
+    document.title = 'Tech High ';
     return () => {
-      document.title = 'Tech High'; // Reset on unmount if needed.
+      document.title = 'Tech High';
     };
   }, []);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -32,19 +33,18 @@ function App() {
 
   return (
     <Router>
-      <div className="App">
+      <div className={`App ${isMenuOpen ? 'menu-open' : ''}`}> {/* Add a class for styling */}
         <header className="app-header">
           <button className="hamburger-menu" onClick={toggleMenu}>
             ☰
           </button>
         </header>
 
+        {isMenuOpen && <Sidebar toggleMenu={toggleMenu} />} {/* Conditionally render the Sidebar */}
+
         <main className="app-content">
           <Routes>
-            {/* Add this redirect route */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Existing routes */}
             <Route path="/add_beacon" element={<AddBeacon />} />
             <Route path="/add_venue" element={<AddVenue />} />
             <Route path="/reports" element={<Reports />} />
