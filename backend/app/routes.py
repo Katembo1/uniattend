@@ -4,6 +4,7 @@ from flask_jwt_extended import (
     jwt_required, get_jwt_identity
 )
 from datetime import datetime
+from sqlalchemy import text
 from app import db
 from app.models import (
     User, Admin, Student, Lecturer, School, Department, Program, Unit,
@@ -51,6 +52,26 @@ def paginate_query(query, page=1, per_page=20):
     }
 
 
+# ==================== HEALTH CHECK ====================
+@api_bp.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify backend connectivity"""
+    try:
+        # Test database connection
+        db.session.execute(text('SELECT 1'))
+        db_status = 'connected'
+    except Exception as e:
+        db_status = 'disconnected'
+        print(f"Database health check failed: {str(e)}")
+    
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'database': db_status,
+        'service': 'UniAttend API'
+    }), 200
+
+
 # ==================== AUTHENTICATION ====================
 @api_bp.route('/admin/auth/login', methods=['POST'])
 def admin_login():
@@ -82,13 +103,24 @@ def admin_login():
         # Log action
         log_action(user.id, 'login')
         
+        # Get admin profile
+        admin = Admin.query.filter_by(user_id=user.id).first()
+        user_data = user.to_dict()
+        
+        if admin:
+            admin_data = admin.to_dict()
+            user_data['admin_profile'] = admin_data
+        
         return jsonify({
             'token': access_token,
             'refresh_token': refresh_token,
-            'user': user.to_dict()
+            'user': user_data
         }), 200
         
     except Exception as e:
+        import traceback
+        print("LOGIN ERROR:", str(e))
+        print(traceback.format_exc())
         return jsonify({'message': str(e)}), 500
 
 

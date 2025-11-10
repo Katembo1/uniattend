@@ -48,13 +48,16 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     
     # Override with production database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or Config.SQLALCHEMY_DATABASE_URI
     
-    # Ensure these are set from environment in production
-    if not os.environ.get('SECRET_KEY'):
-        raise ValueError("SECRET_KEY must be set in production")
-    if not os.environ.get('JWT_SECRET_KEY'):
-        raise ValueError("JWT_SECRET_KEY must be set in production")
+    @classmethod
+    def init_app(cls, app):
+        """Initialize production configuration"""
+        # Validate required environment variables
+        if not os.environ.get('SECRET_KEY'):
+            raise ValueError("SECRET_KEY must be set in production")
+        if not os.environ.get('JWT_SECRET_KEY'):
+            raise ValueError("JWT_SECRET_KEY must be set in production")
 
 
 class TestingConfig(Config):

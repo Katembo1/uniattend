@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -14,10 +14,17 @@ class BaseModel(db.Model):
     
     def to_dict(self):
         """Convert model to dictionary"""
-        return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
-        }
+        result = {}
+        for column in self.__table__.columns:
+            value = getattr(self, column.name)
+            # Convert datetime and date objects to ISO format strings
+            if isinstance(value, datetime):
+                result[column.name] = value.isoformat()
+            elif isinstance(value, date):
+                result[column.name] = value.isoformat()
+            else:
+                result[column.name] = value
+        return result
 
 
 # ==================== USER MODELS ====================

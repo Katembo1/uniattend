@@ -1,5 +1,9 @@
 import os
+from dotenv import load_dotenv
 from app import create_app, db
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create Flask application
 app = create_app(os.getenv('FLASK_ENV', 'development'))
