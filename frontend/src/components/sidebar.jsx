@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, toggleMenu }) => {
   const location = useLocation();
 
   const getActiveClass = (path) => {
@@ -39,6 +39,11 @@ const Sidebar = () => {
             flex-direction: column;
             box-shadow: 2px 0 5px rgba(0,0,0,0.2);
             font-family: 'Arial', sans-serif;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
         }
 
         .sidebar h2 {
@@ -91,9 +96,44 @@ const Sidebar = () => {
             font-size: 0.9rem;
             color: #bdc3c7;
         }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-overlay.visible {
+                display: block;
+            }
+        }
         `}
       </style>
-      <div className="sidebar">
+      
+      {/* Overlay for mobile - clicking it closes the sidebar */}
+      <div 
+        className={`sidebar-overlay ${isOpen ? 'visible' : ''}`}
+        onClick={toggleMenu}
+      />
+      
+      <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <h2>UniAttend</h2>
         <ul>
           <li><Link to='/dashboard' className={getActiveClass('/dashboard')}>Dashboard</Link></li>

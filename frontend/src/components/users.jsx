@@ -22,7 +22,9 @@ function Users() {
 
     const filteredUsers = users.filter(user => {
         if (activeFilter === 'All Users') return true;
-        return user.role === activeFilter;
+        // Convert filter names to match role names: Students->Student, Lecturers->Lecturer, Admins->Admin
+        const roleToMatch = activeFilter.endsWith('s') ? activeFilter.slice(0, -1) : activeFilter;
+        return user.role === roleToMatch;
     }).filter(user => {
         return user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                user.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -43,7 +45,7 @@ function Users() {
                             <button
                                 key={filter}
                                 className={`filter-button ${activeFilter === filter ? 'active' : ''}`}
-                                onClick={() => handleFilterClick(filter.replace('s', ''))} // Remove 's' for Students/Lecturers/Admins to match data
+                                onClick={() => handleFilterClick(filter)}
                             >
                                 {filter}
                             </button>

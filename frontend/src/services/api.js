@@ -1,0 +1,218 @@
+import axios from 'axios';
+
+// Base API URL - update this based on your Flask backend
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Create axios instance with default config
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 100000, // 100 seconds
+});
+
+// Request interceptor to add auth token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle errors globally
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Unauthorized - clear token and redirect to login
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ==================== AUTHENTICATION ====================
+export const authAPI = {
+  login: (credentials) => apiClient.post('/admin/auth/login', credentials),
+  logout: () => apiClient.post('/admin/auth/logout'),
+  changePassword: (data) => apiClient.post('/admin/auth/change-password', data),
+};
+
+// ==================== ADMIN MANAGEMENT ====================
+export const adminAPI = {
+  getAll: () => apiClient.get('/admin/admins'),
+  getById: (adminId) => apiClient.get(`/admin/admins/${adminId}`),
+  create: (data) => apiClient.post('/admin/admins', data),
+  update: (adminId, data) => apiClient.put(`/admin/admins/${adminId}`, data),
+  delete: (adminId) => apiClient.delete(`/admin/admins/${adminId}`),
+  getByRole: (role) => apiClient.get(`/admin/admins/role/${role}`),
+  updatePermissions: (adminId, permissions) => 
+    apiClient.put(`/admin/admins/${adminId}/permissions`, permissions),
+};
+
+// ==================== USER MANAGEMENT ====================
+export const userAPI = {
+  getAll: (params) => apiClient.get('/admin/users', { params }),
+  getById: (userId) => apiClient.get(`/admin/users/${userId}`),
+  create: (data) => apiClient.post('/admin/users', data),
+  update: (userId, data) => apiClient.put(`/admin/users/${userId}`, data),
+  delete: (userId) => apiClient.delete(`/admin/users/${userId}`),
+  activate: (userId) => apiClient.put(`/admin/users/${userId}/activate`),
+  deactivate: (userId) => apiClient.put(`/admin/users/${userId}/deactivate`),
+};
+
+// ==================== STUDENT MANAGEMENT ====================
+export const studentAPI = {
+  getAll: (params) => apiClient.get('/admin/students', { params }),
+  getById: (studentId) => apiClient.get(`/admin/students/${studentId}`),
+  create: (data) => apiClient.post('/admin/students', data),
+  update: (studentId, data) => apiClient.put(`/admin/students/${studentId}`, data),
+  delete: (studentId) => apiClient.delete(`/admin/students/${studentId}`),
+};
+
+// ==================== LECTURER MANAGEMENT ====================
+export const lecturerAPI = {
+  getAll: (params) => apiClient.get('/admin/lecturers', { params }),
+  getById: (lecturerId) => apiClient.get(`/admin/lecturers/${lecturerId}`),
+  create: (data) => apiClient.post('/admin/lecturers', data),
+  update: (lecturerId, data) => apiClient.put(`/admin/lecturers/${lecturerId}`, data),
+  delete: (lecturerId) => apiClient.delete(`/admin/lecturers/${lecturerId}`),
+};
+
+// ==================== INSTITUTIONAL HIERARCHY ====================
+export const institutionAPI = {
+  // Schools
+  schools: {
+    getAll: () => apiClient.get('/admin/schools'),
+    create: (data) => apiClient.post('/admin/schools', data),
+    update: (schoolId, data) => apiClient.put(`/admin/schools/${schoolId}`, data),
+    delete: (schoolId) => apiClient.delete(`/admin/schools/${schoolId}`),
+  },
+  
+  // Departments
+  departments: {
+    getAll: (params) => apiClient.get('/admin/departments', { params }),
+    create: (data) => apiClient.post('/admin/departments', data),
+    update: (deptId, data) => apiClient.put(`/admin/departments/${deptId}`, data),
+    delete: (deptId) => apiClient.delete(`/admin/departments/${deptId}`),
+  },
+  
+  // Programs
+  programs: {
+    getAll: (params) => apiClient.get('/admin/programs', { params }),
+    create: (data) => apiClient.post('/admin/programs', data),
+    update: (programId, data) => apiClient.put(`/admin/programs/${programId}`, data),
+    delete: (programId) => apiClient.delete(`/admin/programs/${programId}`),
+  },
+  
+  // Units
+  units: {
+    getAll: (params) => apiClient.get('/admin/units', { params }),
+    create: (data) => apiClient.post('/admin/units', data),
+    update: (unitId, data) => apiClient.put(`/admin/units/${unitId}`, data),
+    delete: (unitId) => apiClient.delete(`/admin/units/${unitId}`),
+  },
+};
+
+// ==================== VENUE/CLASS MANAGEMENT ====================
+export const classAPI = {
+  getAll: (params) => apiClient.get('/admin/classes', { params }),
+  getById: (classId) => apiClient.get(`/admin/classes/${classId}`),
+  create: (data) => apiClient.post('/admin/classes', data),
+  update: (classId, data) => apiClient.put(`/admin/classes/${classId}`, data),
+  delete: (classId) => apiClient.delete(`/admin/classes/${classId}`),
+};
+
+// ==================== BEACON MANAGEMENT ====================
+export const beaconAPI = {
+  getAll: (params) => apiClient.get('/admin/beacons', { params }),
+  getById: (beaconId) => apiClient.get(`/admin/beacons/${beaconId}`),
+  create: (data) => apiClient.post('/admin/beacons', data),
+  update: (beaconId, data) => apiClient.put(`/admin/beacons/${beaconId}`, data),
+  delete: (beaconId) => apiClient.delete(`/admin/beacons/${beaconId}`),
+  getUnassigned: () => apiClient.get('/admin/beacons/unassigned'),
+  assign: (beaconId, classId) => apiClient.post(`/admin/beacons/${beaconId}/assign`, { classId }),
+  unassign: (beaconId) => apiClient.delete(`/admin/beacons/${beaconId}/unassign`),
+};
+
+// ==================== TIMETABLE MANAGEMENT ====================
+export const timetableAPI = {
+  getAll: (params) => apiClient.get('/admin/timetable', { params }),
+  getById: (timetableId) => apiClient.get(`/admin/timetable/${timetableId}`),
+  create: (data) => apiClient.post('/admin/timetable', data),
+  update: (timetableId, data) => apiClient.put(`/admin/timetable/${timetableId}`, data),
+  delete: (timetableId) => apiClient.delete(`/admin/timetable/${timetableId}`),
+  bulkImport: (data) => apiClient.post('/admin/timetable/bulk-import', data),
+};
+
+// ==================== SYSTEM SETTINGS ====================
+export const settingsAPI = {
+  getAll: () => apiClient.get('/admin/settings'),
+  getByKey: (key) => apiClient.get(`/admin/settings/${key}`),
+  update: (key, value) => apiClient.put(`/admin/settings/${key}`, { value }),
+  bulkUpdate: (settings) => apiClient.post('/admin/settings/bulk', settings),
+  initialize: () => apiClient.post('/admin/settings/initialize'),
+};
+
+// ==================== AUDIT LOGS ====================
+export const auditAPI = {
+  getAll: (params) => apiClient.get('/admin/audit-logs', { params }),
+  getByUser: (userId, params) => apiClient.get(`/admin/audit-logs/user/${userId}`, { params }),
+  getByEntity: (type, id, params) => 
+    apiClient.get(`/admin/audit-logs/entity/${type}/${id}`, { params }),
+  search: (query) => apiClient.get('/admin/audit-logs/search', { params: query }),
+  getSummary: (params) => apiClient.get('/admin/audit-logs/summary', { params }),
+};
+
+// ==================== REPORTS & ANALYTICS ====================
+export const reportsAPI = {
+  attendance: {
+    overall: (params) => apiClient.get('/admin/reports/attendance/overall', { params }),
+    byProgram: (params) => apiClient.get('/admin/reports/attendance/by-program', { params }),
+    byUnit: (params) => apiClient.get('/admin/reports/attendance/by-unit', { params }),
+    lowStudents: (params) => apiClient.get('/admin/reports/attendance/low-students', { params }),
+  },
+  
+  lecturerPerformance: (params) => 
+    apiClient.get('/admin/reports/lecturer-performance', { params }),
+  
+  classUtilization: (params) => 
+    apiClient.get('/admin/reports/class-utilization', { params }),
+  
+  beaconUsage: (params) => 
+    apiClient.get('/admin/reports/beacon-usage', { params }),
+  
+  dailyTrends: (params) => 
+    apiClient.get('/admin/reports/daily-trends', { params }),
+  
+  studentDetailed: (studentId, params) => 
+    apiClient.get(`/admin/reports/student/${studentId}`, { params }),
+  
+  export: (data) => 
+    apiClient.post('/admin/reports/export', data, { responseType: 'blob' }),
+};
+
+// ==================== DASHBOARD STATS ====================
+export const dashboardAPI = {
+  getStats: () => apiClient.get('/admin/dashboard/stats'),
+  getRecentActivity: (params) => apiClient.get('/admin/dashboard/recent-activity', { params }),
+};
+
+// ==================== PROFILE ====================
+export const profileAPI = {
+  get: () => apiClient.get('/admin/profile'),
+  update: (data) => apiClient.put('/admin/profile', data),
+  getStatistics: () => apiClient.get('/admin/profile/statistics'),
+};
+
+// Export the axios instance for custom requests
+export default apiClient;

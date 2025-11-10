@@ -145,11 +145,11 @@ export default function AdminProfile() {
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Login</td>
-                                        <td>Admin Dashboard</td>
-                                        <td>Today, 09:45 AM</td>
-                                        <td>192.168.1.105</td>
-                                        <td className="status-success">Success</td>
+                                        <td data-label="Action">Login</td>
+                                        <td data-label="Resource">Admin Dashboard</td>
+                                        <td data-label="Date">Today, 09:45 AM</td>
+                                        <td data-label="IP Address">192.168.1.105</td>
+                                        <td data-label="Status" className="status-success">Success</td>
                                     </tr>
                                 </tbody>
                             </table>
