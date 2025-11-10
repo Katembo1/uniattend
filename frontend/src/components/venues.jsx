@@ -1,11 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css'
 import Sidebar from './sidebar';
+import { classAPI, beaconAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 function Venues() {
     const [activeFilter, setActiveFilter] = useState('All Locations');
     const [searchTerm, setSearchTerm] = useState('');
+    const [venues, setVenues] = useState([]);
+    const [beacons, setBeacons] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
+    const { addNotification } = useApp();
+    const MAX_RETRIES = 3;
+
+    useEffect(() => {
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Load once on mount
+
+    const fetchData = async (isRetry = false) => {
+        if (loading) return;
+        
+        if (isRetry && retryCount >= MAX_RETRIES) {
+            addNotification('Maximum retry attempts reached', 'error');
+            return;
+        }
+        
+        setLoading(true);
+        const timeoutId = setTimeout(() => {
+            console.error('Venues/Beacons fetch timeout');
+            setLoading(false);
+            if (retryCount < MAX_RETRIES) {
+                addNotification('Request timeout - retrying...', 'warning');
+                setRetryCount(prev => prev + 1);
+            }
+        }, 8000);
+
+        try {
+            const [venuesResponse, beaconsResponse] = await Promise.all([
+                classAPI.getAll(),
+                beaconAPI.getAll()
+            ]);
+
+            clearTimeout(timeoutId);
+            setVenues(venuesResponse.data.items || venuesResponse.data || []);
+            setBeacons(beaconsResponse.data.items || beaconsResponse.data || []);
+            setRetryCount(0);
+        } catch (error) {
+            clearTimeout(timeoutId);
+            console.error('Error fetching venues/beacons:', error);
+            
+            if (retryCount < MAX_RETRIES) {
+                addNotification(`Failed to load data - Retry ${retryCount + 1}/${MAX_RETRIES}`, 'warning');
+                setRetryCount(prev => prev + 1);
+                setTimeout(() => fetchData(true), 2000);
+            } else {
+                addNotification('Failed to load venues and beacons', 'error');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleFilterClick = (filter) => {
         setActiveFilter(filter);
@@ -15,22 +72,32 @@ function Venues() {
         setSearchTerm(event.target.value);
     };
 
-    const venues = [
-        { name: 'Lecture Hall A', type: 'Venue', building: 'Main Building', floor: '2', capacity: '120', status: 'Active' },
-        { name: 'Computer Lab 101', type: 'Venue', building: 'Technology Center', floor: '1', capacity: '40', status: 'Active' },
-        { name: 'Beacon LH-A1', type: 'Beacon', building: 'Main Building', floor: '2', capacity: '-', status: 'Online' },
-        { name: 'Seminar Room 203', type: 'Venue', building: 'Arts Building', floor: '2', capacity: '30', status: 'Active' },
-        { name: 'Beacon CL-101', type: 'Beacon', building: 'Technology Center', floor: '-', capacity: '-', status: 'Offline' },
-        { name: 'Library Study Area', type: 'Venue', building: 'Library', floor: '3', capacity: '60', status: 'Active' },
-        { name: 'Beacon SR-203', type: 'Beacon', building: 'Arts Building', floor: '-', capacity: '-', status: 'Online' },
+    // Combine venues and beacons for display
+    const combinedData = [
+        ...venues.map(v => ({
+            name: v.name || v.code,
+            type: 'Venue',
+            building: v.building || '-',
+            floor: v.floor || '-',
+            capacity: v.capacity || '-',
+            status: 'Active'
+        })),
+        ...beacons.map(b => ({
+            name: b.name || b.uuid,
+            type: 'Beacon',
+            building: '-',
+            floor: '-',
+            capacity: '-',
+            status: b.status || 'Unknown'
+        }))
     ];
 
-    const filteredVenues = venues.filter(venue => {
+    const filteredVenues = combinedData.filter(item => {
         if (activeFilter === 'All Locations') return true;
-        return venue.type === activeFilter;
-    }).filter(venue => {
-        return venue.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-               venue.building.toLowerCase().includes(searchTerm.toLowerCase());
+        return item.type === activeFilter;
+    }).filter(item => {
+        return item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               item.building.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     return (

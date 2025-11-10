@@ -1,68 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom'; 
 import './css/Styles.css'
 import Sidebar from './sidebar';
+import { timetableAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 
-// import { FaUserCircle } from 'react-icons/fa';
 function Scheduling() {
     const [activeTab, setActiveTab] = useState('All Classes');
     const [searchTerm, setSearchTerm] = useState('');
-    const [classes, setClasses] = useState([
-        {
-            courseCode: 'CS101',
-            courseName: 'Introduction to Programming',
-            instructor: 'Dr. Smith',
-            venue: 'Lecture Hall A',
-            day: 'Monday',
-            time: '09:00-10:30',
-            status: 'Active',
-        },
-        {
-            courseCode: 'MATH201',
-            courseName: 'Calculus II',
-            instructor: 'Prof. Johnson',
-            venue: 'Lecture Hall A',
-            day: 'Tuesday',
-            time: '11:00-12:30',
-            status: 'Active',
-        },
-        {
-            courseCode: 'CS202',
-            courseName: 'Data Structures',
-            instructor: 'Dr. Williams',
-            venue: 'Computer Lab 101',
-            day: 'Wednesday',
-            time: '14:00-15:30',
-            status: 'Active',
-        },
-        {
-            courseCode: 'ENG101',
-            courseName: 'English Composition',
-            instructor: 'Prof. Davis',
-            venue: 'Seminar Room 203',
-            day: 'Thursday',
-            time: '10:00-11:30',
-            status: 'Active',
-        },
-        {
-            courseCode: 'PHYS101',
-            courseName: 'Physics I',
-            instructor: 'Dr. Brown',
-            venue: 'Lecture Hall A',
-            day: 'Friday',
-            time: '13:00-14:30',
-            status: 'Active',
-        },
-        {
-            courseCode: 'CS301',
-            courseName: 'Database Systems',
-            instructor: 'Prof. Miller',
-            venue: 'Computer Lab 101',
-            day: 'N/A',
-            time: 'N/A',
-            status: 'N/A',
-        },
-    ]);
+    const [classes, setClasses] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
+    const { addNotification } = useApp();
+    const MAX_RETRIES = 3;
+
+    useEffect(() => {
+        fetchSchedule();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Load once on mount
+
+    const fetchSchedule = async (isRetry = false) => {
+        if (loading) return;
+        
+        if (isRetry && retryCount >= MAX_RETRIES) {
+            addNotification('Maximum retry attempts reached', 'error');
+            return;
+        }
+        
+        setLoading(true);
+        const timeoutId = setTimeout(() => {
+            console.error('Schedule fetch timeout');
+            setLoading(false);
+            if (retryCount < MAX_RETRIES) {
+                addNotification('Request timeout - retrying...', 'warning');
+                setRetryCount(prev => prev + 1);
+            }
+        }, 8000);
+
+        try {
+            const response = await timetableAPI.getAll();
+            clearTimeout(timeoutId);
+            
+            // Transform API data to match display format
+            const scheduleData = (response.data.items || response.data || []).map(entry => ({
+                courseCode: entry.unit?.code || 'N/A',
+                courseName: entry.unit?.name || 'N/A',
+                instructor: entry.lecturer?.user?.first_name + ' ' + entry.lecturer?.user?.last_name || 'N/A',
+                venue: entry.class?.name || 'N/A',
+                day: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][entry.day_of_week] || 'N/A',
+                time: `${entry.start_time}-${entry.end_time}`,
+                status: 'Active',
+            }));
+            
+            setClasses(scheduleData);
+            setRetryCount(0);
+        } catch (error) {
+            clearTimeout(timeoutId);
+            console.error('Error fetching schedule:', error);
+            
+            if (retryCount < MAX_RETRIES) {
+                addNotification(`Failed to load schedule - Retry ${retryCount + 1}/${MAX_RETRIES}`, 'warning');
+                setRetryCount(prev => prev + 1);
+                setTimeout(() => fetchSchedule(true), 2000);
+            } else {
+                addNotification('Failed to load schedule', 'error');
+                // Set empty array on final failure
+                setClasses([]);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);

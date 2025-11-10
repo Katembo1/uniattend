@@ -1,12 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { healthAPI } from '../services/api';
 
 const Sidebar = ({ isOpen, toggleMenu }) => {
   const location = useLocation();
+  const [healthStatus, setHealthStatus] = useState({
+    status: 'checking',
+    database: 'unknown',
+    lastCheck: null
+  });
 
   const getActiveClass = (path) => {
     return location.pathname === path ? 'active' : '';
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    let checkInterval = null;
+
+    const checkHealth = async () => {
+      try {
+        const response = await healthAPI.check();
+        if (isMounted) {
+          setHealthStatus({
+            status: 'healthy',
+            database: response.data.database,
+            lastCheck: new Date().toLocaleTimeString()
+          });
+        }
+      } catch (error) {
+        if (isMounted) {
+          setHealthStatus({
+            status: 'error',
+            database: 'disconnected',
+            lastCheck: new Date().toLocaleTimeString()
+          });
+        }
+      }
+    };
+
+    // Initial check
+    checkHealth();
+
+    // Check every 30 seconds
+    checkInterval = setInterval(checkHealth, 30000);
+
+    return () => {
+      isMounted = false;
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, []);
 
   return (
     <>
@@ -97,6 +140,68 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
             color: #bdc3c7;
         }
 
+        .health-status {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .health-status.healthy {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+        }
+
+        .health-status.error {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+        }
+
+        .health-status.checking {
+            background-color: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+        }
+
+        .health-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .health-status.healthy .health-status-indicator {
+            background-color: #28a745;
+        }
+
+        .health-status.error .health-status-indicator {
+            background-color: #dc3545;
+        }
+
+        .health-status.checking .health-status-indicator {
+            background-color: #ffc107;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .health-status-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .health-status-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
         /* Mobile responsive styles */
         @media (max-width: 768px) {
             .sidebar {
@@ -135,6 +240,20 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
       
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <h2>UniAttend</h2>
+        
+        {/* Health Status Indicator */}
+        <div className={`health-status ${healthStatus.status}`}>
+          <div className="health-status-text">
+            <span className="health-status-indicator"></span>
+            {healthStatus.status === 'healthy' && 'Backend Connected'}
+            {healthStatus.status === 'error' && 'Backend Disconnected'}
+            {healthStatus.status === 'checking' && 'Checking...'}
+          </div>
+          {healthStatus.lastCheck && (
+            <div className="health-status-time">{healthStatus.lastCheck}</div>
+          )}
+        </div>
+        
         <ul>
           <li><Link to='/dashboard' className={getActiveClass('/dashboard')}>Dashboard</Link></li>
           <li><Link to="/users" className={getActiveClass('/users')}>User Management</Link></li>

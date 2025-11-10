@@ -9,7 +9,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 100000, // 100 seconds
+  timeout: 8000, // 8 seconds timeout to prevent resource overload
 });
 
 // Request interceptor to add auth token
@@ -18,10 +18,14 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('✓ Request to:', config.url, 'with Bearer token');
+    } else {
+      console.warn('⚠ Request to:', config.url, 'WITHOUT token');
     }
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -30,15 +34,33 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data,
+      headers: error.response?.headers
+    });
+    
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    } else if (error.response?.status === 422) {
+      // Unprocessable Entity - validation error
+      console.error('Validation Error 422:', error.response.data);
     }
     return Promise.reject(error);
   }
 );
+
+// ==================== HEALTH CHECK ====================
+export const healthAPI = {
+  check: () => apiClient.get('/health', { timeout: 5000 }), // 5 second timeout for health check
+};
 
 // ==================== AUTHENTICATION ====================
 export const authAPI = {

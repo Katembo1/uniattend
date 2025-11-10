@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import './Users/AddNewUser.css'; // Create a CSS file for styling
 import './css/Styles.css'
-import { Link,useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from './sidebar';
+import { userAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 function AddNewUser() {
   const navigate = useNavigate();
+  const { addNotification } = useApp();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -16,30 +19,55 @@ function AddNewUser() {
   });
 
   const [formErrors, setFormErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error for this field when user starts typing
+    if (formErrors[e.target.name]) {
+      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(formData);
     setFormErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      console.log('Form data submitted:', formData);
-      setSuccessMessage('User added successfully!');
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: 'student',
-        password: '',
-        confirmPassword: '',
-      });
-      setFormErrors({});
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setSubmitting(true);
+      try {
+        await userAPI.create({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          role: formData.role,
+          password: formData.password
+        });
+
+        addNotification('User added successfully!', 'success');
+        
+        // Reset form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          role: 'student',
+          password: '',
+          confirmPassword: '',
+        });
+        
+        // Navigate to users page after short delay
+        setTimeout(() => {
+          navigate('/users');
+        }, 1500);
+      } catch (error) {
+        console.error('Error creating user:', error);
+        const errorMsg = error.response?.data?.message || 'Failed to create user';
+        addNotification(errorMsg, 'error');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -83,8 +111,6 @@ function AddNewUser() {
             <h2>Add New User</h2>
           </div>
           <div className="card-body">
-            {successMessage && <div className="alert alert-success">{successMessage}</div>}
-            
             <form onSubmit={handleSubmit} className="user-form">
               <div className="form-row">
                 <div className="form-group">
@@ -165,11 +191,11 @@ function AddNewUser() {
               </div>
 
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => navigate('/users')}>
+                <button type="button" className="btn-secondary" onClick={() => navigate('/users')} disabled={submitting}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Add User
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  {submitting ? 'Adding User...' : 'Add User'}
                 </button>
               </div>
             </form>

@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import './css/Styles.css';
 import ViewList from './viewlist';
 import Sidebar from './sidebar';
+import { reportsAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
+
 function Reports() {
   const [showViewList, setShowViewList] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,27 +15,11 @@ function Reports() {
     attendanceRate: 0,
     atRiskStudents: 0
   });
-
-  const reportsData = [
-    {
-      course: 'CS101',
-      date: 'May 15, 2023',
-      totalStudents: 45,
-      present: 42,
-      absent: 3,
-      attendance: '93.3%',
-      status: 'Complete',
-    },
-    {
-      course: 'MATH201',
-      date: 'May 15, 2023',
-      totalStudents: 38,
-      present: 35,
-      absent: 3,
-      attendance: '92.1%',
-      status: 'Complete',
-    },
-  ];
+  const [reportsData, setReportsData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const { addNotification } = useApp();
+  const MAX_RETRIES = 3;
 
   const atRiskStudents = [
     { id: 1, name: 'Student A' },
@@ -40,19 +27,71 @@ function Reports() {
   ];
 
   useEffect(() => {
-    // Animate the numbers when component mounts
-    const targetCounts = {
-      totalStudents: 2456,
-      activeCourses: 156,
-      attendanceRate: 87.3,
-      atRiskStudents: atRiskStudents.length
-    };
+    fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Load once on mount
 
-    const duration = 1000; // Animation duration in ms
-    const steps = 50; // Number of steps in the animation
+  const fetchReports = async (isRetry = false) => {
+    if (loading) return;
+    
+    if (isRetry && retryCount >= MAX_RETRIES) {
+      addNotification('Maximum retry attempts reached', 'error');
+      return;
+    }
+    
+    setLoading(true);
+    const timeoutId = setTimeout(() => {
+      console.error('Reports fetch timeout');
+      setLoading(false);
+      if (retryCount < MAX_RETRIES) {
+        addNotification('Request timeout - retrying...', 'warning');
+        setRetryCount(prev => prev + 1);
+      }
+    }, 8000);
+
+    try {
+      const response = await reportsAPI.getAttendance();
+      clearTimeout(timeoutId);
+      
+      setReportsData(response.data.items || response.data || []);
+      
+      // Animate stats
+      animateCounters({
+        totalStudents: response.data.totalStudents || 0,
+        activeCourses: response.data.activeCourses || 0,
+        attendanceRate: response.data.averageAttendance || 0,
+        atRiskStudents: response.data.atRiskCount || atRiskStudents.length
+      });
+      
+      setRetryCount(0);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error('Error fetching reports:', error);
+      
+      if (retryCount < MAX_RETRIES) {
+        addNotification(`Failed to load reports - Retry ${retryCount + 1}/${MAX_RETRIES}`, 'warning');
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => fetchReports(true), 2000);
+      } else {
+        addNotification('Failed to load reports', 'error');
+        // Use zero values on failure
+        animateCounters({
+          totalStudents: 0,
+          activeCourses: 0,
+          attendanceRate: 0,
+          atRiskStudents: atRiskStudents.length
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const animateCounters = (targetCounts) => {
+    const duration = 1000;
+    const steps = 50;
     const stepValues = {};
 
-    // Calculate step values for each counter
     Object.keys(targetCounts).forEach(key => {
       stepValues[key] = targetCounts[key] / steps;
     });
@@ -74,7 +113,7 @@ function Reports() {
     }, duration / steps);
 
     return () => clearInterval(interval);
-  }, []);
+  };
 
   const handleViewListClick = () => {
     setShowViewList(true);
