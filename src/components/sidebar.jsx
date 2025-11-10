@@ -34,7 +34,7 @@ const Sidebar = () => {
             background-color: var(--sidebar-bg);
             color: var(--sidebar-text);
             padding: 20px;
-            height: 100dvh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             box-shadow: 2px 0 5px rgba(0,0,0,0.2);
