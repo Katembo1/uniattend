@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom'; 
-import { FaUserCircle } from 'react-icons/fa';
+import Sidebar from './sidebar';
 function ScheduleImport() {
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -11,7 +11,7 @@ function ScheduleImport() {
   const handleUpload = () => {
     if (selectedFile) {
       // Here you would typically send the file to your server
-      console.log('Uploading:', selectedFile);
+      alert('Uploading:', selectedFile);
 
       // Example using FormData to send the file
       const formData = new FormData();
@@ -39,26 +39,7 @@ function ScheduleImport() {
   return (
    
     <div style={{ display: 'flex' }}>
-    <div className="sidebar" style={{ width: '250px', backgroundColor: '#f0f0f0', padding: '20px', boxSizing: 'border-box' }}>
-        <h2>UniAttend</h2>
-        <ul>
-            <li><Link to="/dashboard">Dashboard</Link></li>
-            <li className="active">User Management</li>
-            <li><Link to="/venues">Venues & Beacons</Link></li>
-            <li><Link to="/scheduling">Class Scheduling</Link></li>
-            <li><Link to="/reports">Attendance Reports</Link></li>
-        </ul>
-        <h3>ADMIN</h3>
-        <ul>
-            <li><Link to="/settings">Settings</Link></li>
-            <li><Link to="/security">Security</Link></li>
-        </ul>
-        <div className="admin-user">
-        <FaUserCircle size={30} />
-            Admin User<br />
-            System Administrator
-        </div>
-    </div>
+    <Sidebar/>
     <div style={{ flex: 1, padding: '20px' }}>
             <div className="breadcrumbs-container"> 
               <div className="breadcrumbs">

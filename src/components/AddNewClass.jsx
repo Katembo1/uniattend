@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './css/Styles.css';
-import { FaUserCircle } from 'react-icons/fa';
+import Sidebar from './sidebar';
+
 function AddNewClass() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -70,28 +71,7 @@ function AddNewClass() {
   return (
     <div className="dashboard-container">
       {/* Sidebar Navigation */}
-      <div className="sidebar">
-        <h2>UniAttend</h2>
-        <ul>
-          <li><Link to="/dashboard">Dashboard</Link></li>
-          <li><Link to="/users">User Management</Link></li>
-          <li><Link to="/venues">Venues & Beacons</Link></li>
-          <li className="active">Class Scheduling</li>
-          <li><Link to="/reports">Attendance Reports</Link></li>
-        </ul>
-        <h3>ADMIN</h3>
-        <ul>
-          <li><Link to="/settings">Settings</Link></li>
-          <li><Link to="/security">Security</Link></li>
-          <li><Link to="/admin-profile">Admin Profile</Link></li>
-        </ul>
-        <div className="admin-user">
-         <FaUserCircle size={30} />
-          Admin User<br />
-          System Administrator
-        </div>
-      </div>
-
+      <Sidebar/>
       {/* Main Content */}
       <div className="content">
         <div className="breadcrumbs-container"> 

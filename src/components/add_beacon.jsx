@@ -1,44 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link
 import './css/AddBeacon.css';
-import { FaUserCircle } from 'react-icons/fa';
+import Sidebar from './sidebar';
+
 function AddBeacon() {
   return (
   <body>
-      <div className="sidebar">
-        <h2>UniAttend</h2>
-        <ul>
-          <li>
-            <Link to="/dashboard">Dashboard</Link>
-          </li>
-          <li>
-            <Link to="/users">User Management</Link>
-          </li>
-          <li className="active">
-            <Link to="/venues">Venues & Beacons</Link>
-          </li>
-          <li>
-            <Link to="/scheduling">Class Scheduling</Link>
-          </li>
-          <li>
-            <Link to="/reports">Attendance Reports</Link>
-          </li>
-        </ul>
-        <h3>ADMIN</h3>
-        <ul>
-          <li>
-            <Link to="/settings">Settings</Link>
-          </li>
-          <li>
-            <Link to="/security">Security</Link>
-          </li>
-        </ul>
-        <div className="admin-user">
-        <FaUserCircle size={30} />
-          Admin User<br />
-          System Administrator
-        </div>
-      </div>
+      <Sidebar/>
       <div className="content">
         <div className="breadcrumbs">
           <Link to="/dashboard">Dashboard</Link> &gt;

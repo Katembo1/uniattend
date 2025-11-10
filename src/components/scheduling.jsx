@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom'; 
 import './css/Styles.css'
+import Sidebar from './sidebar';
 
-import { FaUserCircle } from 'react-icons/fa';
+// import { FaUserCircle } from 'react-icons/fa';
 function Scheduling() {
     const [activeTab, setActiveTab] = useState('All Classes');
     const [searchTerm, setSearchTerm] = useState('');
@@ -79,27 +80,7 @@ function Scheduling() {
 
     return (
         <div className="app-container">
-            <div className="sidebar">
-                <h2>UniAttend</h2>
-                <ul>
-                    <li><Link to="/dashboard">Dashboard</Link></li>
-                    <li><Link to="/users">User Management</Link></li>
-                    <li><Link to="/venues">Venues & Beacons</Link></li>
-                    <li className="active">Class Scheduling</li>
-                    <li><Link to="/reports">Attendance Reports</Link></li>
-                </ul>
-                <h3>ADMIN</h3>
-                <ul>
-                    <li><Link to="/settings">Settings</Link></li>
-                    <li><Link to="/security">Security</Link></li>
-                    <li><Link to="/admin-profile">Admin Profile</Link></li>
-                </ul>
-                <div className="admin-user">
-                <FaUserCircle size={30} />
-          Admin User<br />
-          System Administrator
-        </div>
-            </div>
+          <Sidebar/>
             <div className="content">
                 <div className="breadcrumbs">
                     <Link to="/dashboard">Dashboard</Link> <span>&gt;</span> Class Scheduling

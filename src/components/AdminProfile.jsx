@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css';
+import Sidebar from './sidebar';
 
 export default function AdminProfile() {
     const [activeTab, setActiveTab] = useState('Profile Information');
@@ -31,24 +32,7 @@ export default function AdminProfile() {
     return (
         <div className="dashboard-container">
             {/* Sidebar Navigation */}
-            <div className="sidebar">
-                <h2>UniAttend</h2>
-                <ul>
-                    <li><Link to="/dashboard">Dashboard</Link></li>
-                    <li><Link to="/users">User Management</Link></li>
-                    <li><Link to="/venues">Venues & Beacons</Link></li>
-                    <li><Link to="/scheduling">Class Scheduling</Link></li>
-                    <li><Link to="/reports">Attendance Reports</Link></li>
-                </ul>
-                <h3>ADMIN</h3>
-                <ul>
-                    <li className="active"><Link to="/admin-profile">Admin Profile</Link></li>
-                    <li><Link to="/settings">Settings</Link></li>
-                    <li><Link to="/security">Security</Link></li>
-                </ul>
-            
-  
-            </div>
+           <Sidebar/>
 
             {/* Main Content */}
             <div className="content">
