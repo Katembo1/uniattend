@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css';
 import ViewList from './viewlist';
-
+import { FaUserCircle } from 'react-icons/fa';
 function Reports() {
   const [showViewList, setShowViewList] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -121,7 +121,7 @@ function Reports() {
           <li><Link to="/admin-profile">Admin Profile</Link></li>
         </ul>
         <div className="admin-user">
-          <img src="placeholder-user-avatar.png" alt="Admin User" className="admin-avatar" />
+        <FaUserCircle size={30} />
           Admin User<br />
           System Administrator
         </div>

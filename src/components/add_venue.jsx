@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link
-// import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle } from 'react-icons/fa';
 function AddVenue() {
   return (
     <body>
@@ -33,7 +33,7 @@ function AddVenue() {
           </li>
         </ul>
         <div className="admin-user">
-        {/* <FaUserCircle size={30} /> */}
+        <FaUserCircle size={30} />
           Admin User<br />
           System Administrator
         </div>

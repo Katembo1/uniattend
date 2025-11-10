@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom'; 
+import { FaUserCircle } from 'react-icons/fa';
 function ScheduleImport() {
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -53,7 +54,7 @@ function ScheduleImport() {
             <li><Link to="/security">Security</Link></li>
         </ul>
         <div className="admin-user">
-            <img src="placeholder-user-avatar.png" alt="Admin User" style={{ width: '30px', borderRadius: '50%' }} />
+        <FaUserCircle size={30} />
             Admin User<br />
             System Administrator
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link
 import './css/AddBeacon.css';
-// import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle } from 'react-icons/fa';
 function AddBeacon() {
   return (
   <body>
@@ -34,7 +34,7 @@ function AddBeacon() {
           </li>
         </ul>
         <div className="admin-user">
-        {/* <FaUserCircle size={30} /> */}
+        <FaUserCircle size={30} />
           Admin User<br />
           System Administrator
         </div>

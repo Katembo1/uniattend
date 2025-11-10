@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css';
-
+import { FaUserCircle } from 'react-icons/fa';
 function Users() {
     const [activeFilter, setActiveFilter] = useState('All Users');
     const [searchTerm, setSearchTerm] = useState('');
@@ -40,10 +40,12 @@ function Users() {
                     <li><Link to="/reports">Attendance Reports</Link></li>
                 </ul>
                 <h3>ADMIN</h3>
+
                 <ul>
                     <li><Link to="/settings">Settings</Link></li>
                     <li><Link to="/security">Security</Link></li>
                     <li><Link to="/admin-profile">Admin Profile</Link></li>
+                    <li><Link to="/admin-profile"><FaUserCircle size={30} /></Link></li>
                 </ul>
             </div>
 

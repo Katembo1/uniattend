@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './Users/AddNewUser.css'; // Create a CSS file for styling
 import './css/Styles.css'
 import { Link,useNavigate } from 'react-router-dom';
-
+import { FaUserCircle } from 'react-icons/fa';
 function AddNewUser() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -81,7 +81,7 @@ function AddNewUser() {
           <li><Link to="/admin-profile">Admin user</Link></li>
         </ul>
         <div className="admin-user">
-          <img src="placeholder-user-avatar.png" alt="Admin User" className="admin-avatar" />
+        <FaUserCircle size={30} />
           Admin User<br />
           System Administrator
         </div>

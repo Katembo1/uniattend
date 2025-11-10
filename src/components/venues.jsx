@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Styles.css'
-
+import { FaUserCircle } from 'react-icons/fa';
 function Venues() {
     const [activeFilter, setActiveFilter] = useState('All Locations');
     const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +53,7 @@ function Venues() {
                 </ul>
                 
                 <div className="admin-user">
-          <img src="placeholder-user-avatar.png" alt="Admin User" className="admin-avatar" />
+                <FaUserCircle size={30} />
           Admin User<br />
           System Administrator
         </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom'; 
 import './css/Styles.css'
 
-// import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle } from 'react-icons/fa';
 function Scheduling() {
     const [activeTab, setActiveTab] = useState('All Classes');
     const [searchTerm, setSearchTerm] = useState('');
@@ -95,7 +95,7 @@ function Scheduling() {
                     <li><Link to="/admin-profile">Admin Profile</Link></li>
                 </ul>
                 <div className="admin-user">
-          <img src="placeholder-user-avatar.png" alt="Admin User" className="admin-avatar" />
+                <FaUserCircle size={30} />
           Admin User<br />
           System Administrator
         </div>
