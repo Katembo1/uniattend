@@ -46,12 +46,27 @@ apiClient.interceptors.response.use(
     
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
+      console.warn('⚠ 401 Unauthorized - Token invalid or expired');
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // Show notification if available
+      if (window.showNotification) {
+        window.showNotification('Session expired. Please login again.', 'error');
+      }
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     } else if (error.response?.status === 422) {
       // Unprocessable Entity - validation error
       console.error('Validation Error 422:', error.response.data);
+      
+      const errorMsg = error.response?.data?.message || 'Invalid token - please login again';
+      if (window.showNotification) {
+        window.showNotification(errorMsg, 'error');
+      }
     }
     return Promise.reject(error);
   }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/sidebar'; // Import the Sidebar component
 import Login from './components/Login';
 import AddBeacon from './components/add_beacon';
@@ -20,13 +20,20 @@ import AdminProfile from "./components/AdminProfile";
 import NotificationContainer from './components/NotificationContainer';
 import './App.css';
 
-function App() {
+function AppContent() {
+  const { addNotification } = useApp();
+  
   useEffect(() => {
-    document.title = 'Tech High ';
+    document.title = 'Tech High';
+    
+    // Expose notification function globally for API interceptor
+    window.showNotification = addNotification;
+    
     return () => {
       document.title = 'Tech High';
+      window.showNotification = null;
     };
-  }, []);
+  }, [addNotification]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -35,19 +42,17 @@ function App() {
   };
 
   return (
-    <AppProvider>
-      <Router>
-        <div className={`App ${isMenuOpen ? 'menu-open' : ''}`}> {/* Add a class for styling */}
-          <NotificationContainer />
-          <header className="app-header">
-            <button className="hamburger-menu" onClick={toggleMenu}>
-              ☰
-            </button>
-          </header>
+    <div className={`App ${isMenuOpen ? 'menu-open' : ''}`}> {/* Add a class for styling */}
+      <NotificationContainer />
+      <header className="app-header">
+        <button className="hamburger-menu" onClick={toggleMenu}>
+          ☰
+        </button>
+      </header>
 
-          <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} /> {/* Always render, toggle with isOpen prop */}
+      <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} /> {/* Always render, toggle with isOpen prop */}
 
-          <main className="app-content">
+      <main className="app-content">
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -68,6 +73,14 @@ function App() {
             </Routes>
           </main>
         </div>
+  );
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <Router>
+        <AppContent />
       </Router>
     </AppProvider>
   );

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { healthAPI } from '../services/api';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { healthAPI, authAPI } from '../services/api';
 
 const Sidebar = ({ isOpen, toggleMenu }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [healthStatus, setHealthStatus] = useState({
     status: 'checking',
     database: 'unknown',
     lastCheck: null
   });
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const getActiveClass = (path) => {
     return location.pathname === path ? 'active' : '';
@@ -17,6 +20,22 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
   useEffect(() => {
     let isMounted = true;
     let checkInterval = null;
+
+    // Check authentication status
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      try {
+        setUser(JSON.parse(userData));
+        setIsAuthenticated(true);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+        setIsAuthenticated(false);
+      }
+    } else {
+      setIsAuthenticated(false);
+    }
 
     const checkHealth = async () => {
       try {
@@ -49,7 +68,45 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
       isMounted = false;
       if (checkInterval) clearInterval(checkInterval);
     };
-  }, []);
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage and redirect
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/login');
+    }
+  };
+
+  const getUserDisplayName = () => {
+    if (!user) return 'Guest User';
+    
+    // Try to get name from admin_profile or user object
+    if (user.admin_profile) {
+      const { first_name, last_name, title } = user.admin_profile;
+      const name = `${first_name || ''} ${last_name || ''}`.trim();
+      return name || user.username || user.email;
+    }
+    
+    return user.username || user.email || 'Admin User';
+  };
+
+  const getUserRole = () => {
+    if (!user) return 'Not Logged In';
+    
+    if (user.admin_profile?.admin_role) {
+      return user.admin_profile.admin_role;
+    }
+    
+    return user.user_type === 'admin' ? 'System Administrator' : user.user_type;
+  };
 
   return (
     <>
@@ -272,8 +329,98 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style={{ width: '30px', height: '30px', margin: '0 auto 5px', color: '#95a5a6', display: 'block' }}>
             <path fill="currentColor" d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3c0 16.2 13.1 29.7 29.7 29.7H418.3c16.2 0 29.7-13.1 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/>
           </svg>
-          Admin User<br />
-          System Administrator
+          <div style={{ marginBottom: '5px' }}>
+            {getUserDisplayName()}<br />
+            <span style={{ fontSize: '0.85em', opacity: 0.8 }}>{getUserRole()}</span>
+          </div>
+          
+          {/* Auth Status Indicator */}
+          <div style={{ 
+            fontSize: '0.75em', 
+            padding: '4px 8px', 
+            marginTop: '8px',
+            borderRadius: '3px',
+            backgroundColor: isAuthenticated ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)',
+            color: isAuthenticated ? '#2ecc71' : '#e74c3c',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '5px'
+          }}>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: isAuthenticated ? '#2ecc71' : '#e74c3c',
+              display: 'inline-block'
+            }}></span>
+            {isAuthenticated ? 'Authenticated' : 'Not Logged In'}
+          </div>
+          
+          {/* Login/Logout Button */}
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                marginTop: '10px',
+                padding: '8px 12px',
+                backgroundColor: 'transparent',
+                border: '1px solid #e74c3c',
+                color: '#e74c3c',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.85em',
+                fontWeight: '500',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#e74c3c';
+                e.target.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#e74c3c';
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style={{ width: '12px', height: '12px', marginRight: '5px', verticalAlign: 'middle' }}>
+                <path fill="currentColor" d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"/>
+              </svg>
+              Logout
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              style={{
+                display: 'block',
+                width: '100%',
+                marginTop: '10px',
+                padding: '8px 12px',
+                backgroundColor: 'transparent',
+                border: '1px solid #3498db',
+                color: '#3498db',
+                borderRadius: '4px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '0.85em',
+                fontWeight: '500',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#3498db';
+                e.target.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#3498db';
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style={{ width: '12px', height: '12px', marginRight: '5px', verticalAlign: 'middle' }}>
+                <path fill="currentColor" d="M217.9 105.9L340.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L217.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1L32 320c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM352 416l64 0c17.7 0 32-14.3 32-32l0-256c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c53 0 96 43 96 96l0 256c0 53-43 96-96 96l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
+              </svg>
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </>

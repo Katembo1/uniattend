@@ -75,20 +75,27 @@ function Venues() {
     // Combine venues and beacons for display
     const combinedData = [
         ...venues.map(v => ({
-            name: v.name || v.code,
+            id: v.class_id,
+            name: v.class_name || v.class_code || 'Unknown',
             type: 'Venue',
             building: v.building || '-',
             floor: v.floor || '-',
             capacity: v.capacity || '-',
-            status: 'Active'
+            status: v.is_active ? 'Active' : 'Inactive',
+            class_type: v.class_type || '-',
+            has_projector: v.has_projector,
+            has_computers: v.has_computers
         })),
         ...beacons.map(b => ({
-            name: b.name || b.uuid,
+            id: b.beacon_id,
+            name: b.beacon_name || b.beacon_uuid?.substring(0, 8) || 'Unknown',
             type: 'Beacon',
             building: '-',
             floor: '-',
             capacity: '-',
-            status: b.status || 'Unknown'
+            status: b.beacon_status || 'Unknown',
+            battery_level: b.battery_level,
+            uuid: b.beacon_uuid
         }))
     ];
 
@@ -164,29 +171,43 @@ function Venues() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredVenues.map((venue, index) => (
-                                    <tr key={venue.name}>
-                                        <td>{venue.name}</td>
-                                        <td>{venue.type}</td>
-                                        <td>{venue.building}</td>
-                                        <td>{venue.floor}</td>
-                                        <td>{venue.capacity}</td>
-                                        <td>
-                                            <span className={`badge ${
-                                                venue.status === 'Active' || venue.status === 'Online' 
-                                                    ? 'badge-success' 
-                                                    : 'badge-danger'
-                                            }`}>
-                                                {venue.status}
-                                            </span>
-                                        </td>
-                                        <td className="table-actions">
-                                            <button className="action-btn">📝</button>
-                                            <button className="action-btn">👁️</button>
-                                            <button className="action-btn">🗑️</button>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>
+                                            Loading venues and beacons...
                                         </td>
                                     </tr>
-                                ))}
+                                ) : filteredVenues.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>
+                                            No venues or beacons found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredVenues.map((venue, index) => (
+                                        <tr key={`${venue.type}-${venue.id || index}`}>
+                                            <td>{venue.name}</td>
+                                            <td>{venue.type}</td>
+                                            <td>{venue.building}</td>
+                                            <td>{venue.floor}</td>
+                                            <td>{venue.capacity}</td>
+                                            <td>
+                                                <span className={`badge ${
+                                                    venue.status === 'Active' || venue.status === 'Online' 
+                                                        ? 'badge-success' 
+                                                        : 'badge-danger'
+                                                }`}>
+                                                    {venue.status}
+                                                </span>
+                                            </td>
+                                            <td className="table-actions">
+                                                <button className="action-btn" title="Edit">📝</button>
+                                                <button className="action-btn" title="View Details">👁️</button>
+                                                <button className="action-btn" title="Delete">🗑️</button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
