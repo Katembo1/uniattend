@@ -1,3 +1,12 @@
+# Load environment variables first
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+# Use PyMySQL as MySQL driver (required for Aiven connection)
+import pymysql
+pymysql.install_as_MySQLdb()
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager

@@ -1,5 +1,10 @@
 import os
 from dotenv import load_dotenv
+
+# Use PyMySQL as MySQL driver (required for Aiven connection)
+import pymysql
+pymysql.install_as_MySQLdb()
+
 from app import create_app, db
 
 # Load environment variables from .env file

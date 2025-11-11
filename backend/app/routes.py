@@ -16,6 +16,12 @@ api_bp = Blueprint('api', __name__)
 
 
 # ==================== HELPER FUNCTIONS ====================
+def get_current_user_id():
+    """Get current user ID from JWT token (convert from string to int)"""
+    identity = get_jwt_identity()
+    return int(identity) if identity else None
+
+
 def log_action(user_id, action, entity_type=None, entity_id=None, details=None):
     """Log user action to audit log"""
     try:
@@ -84,27 +90,27 @@ def admin_login():
         if not email or not password:
             return jsonify({'message': 'Email and password required'}), 400
         
-        user = User.query.filter_by(email=email, role='admin').first()
+        user = User.query.filter_by(email=email, user_type='admin').first()
         
         if not user or not user.check_password(password):
             return jsonify({'message': 'Invalid credentials'}), 401
         
-        if user.status != 'active':
+        if not user.is_active:
             return jsonify({'message': 'Account is not active'}), 403
         
         # Update last login
         user.last_login = datetime.utcnow()
         db.session.commit()
         
-        # Create tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        # Create tokens with string identity (JWT requires string)
+        access_token = create_access_token(identity=str(user.user_id))
+        refresh_token = create_refresh_token(identity=str(user.user_id))
         
         # Log action
-        log_action(user.id, 'login')
+        log_action(user.user_id, 'login')
         
         # Get admin profile
-        admin = Admin.query.filter_by(user_id=user.id).first()
+        admin = Admin.query.filter_by(user_id=user.user_id).first()
         user_data = user.to_dict()
         
         if admin:
@@ -129,7 +135,7 @@ def admin_login():
 def admin_logout():
     """Admin logout"""
     try:
-        user_id = get_jwt_identity()
+        user_id = get_current_user_id()
         log_action(user_id, 'logout')
         return jsonify({'message': 'Logged out successfully'}), 200
     except Exception as e:
@@ -141,7 +147,7 @@ def admin_logout():
 def change_password():
     """Change password"""
     try:
-        user_id = get_jwt_identity()
+        user_id = get_current_user_id()
         data = request.get_json()
         
         old_password = data.get('oldPassword')
@@ -174,15 +180,16 @@ def get_users():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
-        role = request.args.get('role')
-        status = request.args.get('status')
+        user_type = request.args.get('user_type')
+        is_active = request.args.get('is_active')
         
         query = User.query
         
-        if role:
-            query = query.filter_by(role=role)
-        if status:
-            query = query.filter_by(status=status)
+        if user_type:
+            query = query.filter_by(user_type=user_type)
+        if is_active is not None:
+            active_val = is_active.lower() == 'true'
+            query = query.filter_by(is_active=active_val)
         
         result = paginate_query(query, page, per_page)
         return jsonify(result), 200
@@ -207,26 +214,28 @@ def get_user(user_id):
 def create_user():
     """Create new user"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
-        # Check if email already exists
+        # Check if email or username already exists
         if User.query.filter_by(email=data['email']).first():
             return jsonify({'message': 'Email already exists'}), 400
         
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'message': 'Username already exists'}), 400
+        
         user = User(
+            username=data['username'],
             email=data['email'],
-            first_name=data['firstName'],
-            last_name=data['lastName'],
-            role=data['role'],
-            status='active'
+            user_type=data['user_type'],
+            is_active=True
         )
         user.set_password(data.get('password', 'changeme123'))
         
         db.session.add(user)
         db.session.commit()
         
-        log_action(current_user_id, 'create', 'user', user.id, {'email': user.email})
+        log_action(current_user_id, 'create', 'user', user.user_id, {'email': user.email})
         
         return jsonify(user.to_dict()), 201
         
@@ -240,18 +249,17 @@ def create_user():
 def update_user(user_id):
     """Update user"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         user = User.query.get_or_404(user_id)
         data = request.get_json()
         
-        user.first_name = data.get('firstName', user.first_name)
-        user.last_name = data.get('lastName', user.last_name)
+        user.username = data.get('username', user.username)
         user.email = data.get('email', user.email)
-        user.status = data.get('status', user.status)
+        user.is_active = data.get('is_active', user.is_active)
         
         db.session.commit()
         
-        log_action(current_user_id, 'update', 'user', user.id)
+        log_action(current_user_id, 'update', 'user', user.user_id)
         
         return jsonify(user.to_dict()), 200
         
@@ -265,7 +273,7 @@ def update_user(user_id):
 def delete_user(user_id):
     """Delete user"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         user = User.query.get_or_404(user_id)
         
         db.session.delete(user)
@@ -286,7 +294,7 @@ def activate_user(user_id):
     """Activate user"""
     try:
         user = User.query.get_or_404(user_id)
-        user.status = 'active'
+        user.is_active = True
         db.session.commit()
         return jsonify({'message': 'User activated successfully'}), 200
     except Exception as e:
@@ -299,7 +307,7 @@ def deactivate_user(user_id):
     """Deactivate user"""
     try:
         user = User.query.get_or_404(user_id)
-        user.status = 'inactive'
+        user.is_active = False
         db.session.commit()
         return jsonify({'message': 'User deactivated successfully'}), 200
     except Exception as e:
@@ -316,7 +324,7 @@ def get_students():
         per_page = request.args.get('per_page', 20, type=int)
         program_id = request.args.get('program_id', type=int)
         
-        query = Student.query.join(User).filter(User.status == 'active')
+        query = Student.query.join(User).filter(User.is_active == True)
         
         if program_id:
             query = query.filter(Student.program_id == program_id)
@@ -343,16 +351,15 @@ def get_student(student_id):
 def create_student():
     """Create new student"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         # Create user account
         user = User(
+            username=data['username'],
             email=data['email'],
-            first_name=data['firstName'],
-            last_name=data['lastName'],
-            role='student',
-            status='active'
+            user_type='student',
+            is_active=True
         )
         user.set_password(data.get('password', 'changeme123'))
         db.session.add(user)
@@ -360,15 +367,18 @@ def create_student():
         
         # Create student profile
         student = Student(
-            user_id=user.id,
-            student_id=data['studentId'],
-            program_id=data.get('programId'),
-            year_of_study=data.get('yearOfStudy', 1)
+            user_id=user.user_id,
+            registration_number=data['registration_number'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            program_id=data.get('program_id'),
+            current_year=data.get('current_year', 1),
+            is_active=True
         )
         db.session.add(student)
         db.session.commit()
         
-        log_action(current_user_id, 'create', 'student', student.id)
+        log_action(current_user_id, 'create', 'student', student.student_id)
         
         return jsonify(student.to_dict()), 201
     except Exception as e:
@@ -381,7 +391,7 @@ def create_student():
 def update_student(student_id):
     """Update student"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         student = Student.query.get_or_404(student_id)
         data = request.get_json()
         
@@ -409,7 +419,7 @@ def update_student(student_id):
 def delete_student(student_id):
     """Delete student"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         student = Student.query.get_or_404(student_id)
         
         db.session.delete(student.user)
@@ -432,7 +442,7 @@ def get_lecturers():
         per_page = request.args.get('per_page', 20, type=int)
         department_id = request.args.get('department_id', type=int)
         
-        query = Lecturer.query.join(User).filter(User.status == 'active')
+        query = Lecturer.query.join(User).filter(User.is_active == True)
         
         if department_id:
             query = query.filter(Lecturer.department_id == department_id)
@@ -459,16 +469,15 @@ def get_lecturer(lecturer_id):
 def create_lecturer():
     """Create new lecturer"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         # Create user account
         user = User(
+            username=data['username'],
             email=data['email'],
-            first_name=data['firstName'],
-            last_name=data['lastName'],
-            role='lecturer',
-            status='active'
+            user_type='lecturer',
+            is_active=True
         )
         user.set_password(data.get('password', 'changeme123'))
         db.session.add(user)
@@ -476,15 +485,18 @@ def create_lecturer():
         
         # Create lecturer profile
         lecturer = Lecturer(
-            user_id=user.id,
-            staff_id=data['staffId'],
-            department_id=data.get('departmentId'),
-            title=data.get('title', '')
+            user_id=user.user_id,
+            staff_id=data['staff_id'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            department_id=data.get('department_id'),
+            title=data.get('title'),
+            is_active=True
         )
         db.session.add(lecturer)
         db.session.commit()
         
-        log_action(current_user_id, 'create', 'lecturer', lecturer.id)
+        log_action(current_user_id, 'create', 'lecturer', lecturer.lecturer_id)
         
         return jsonify(lecturer.to_dict()), 201
     except Exception as e:
@@ -497,7 +509,7 @@ def create_lecturer():
 def update_lecturer(lecturer_id):
     """Update lecturer"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         lecturer = Lecturer.query.get_or_404(lecturer_id)
         data = request.get_json()
         
@@ -525,7 +537,7 @@ def update_lecturer(lecturer_id):
 def delete_lecturer(lecturer_id):
     """Delete lecturer"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         lecturer = Lecturer.query.get_or_404(lecturer_id)
         
         db.session.delete(lecturer.user)
@@ -571,16 +583,15 @@ def get_admin(admin_id):
 def create_admin():
     """Create new admin"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         # Create user account
         user = User(
+            username=data['username'],
             email=data['email'],
-            first_name=data['firstName'],
-            last_name=data['lastName'],
-            role='admin',
-            status='active'
+            user_type='admin',
+            is_active=True
         )
         user.set_password(data.get('password', 'changeme123'))
         db.session.add(user)
@@ -588,14 +599,19 @@ def create_admin():
         
         # Create admin profile
         admin = Admin(
-            user_id=user.id,
+            user_id=user.user_id,
+            staff_id=data['staff_id'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            admin_role=data.get('admin_role', 'System Admin'),
             permissions=data.get('permissions', {}),
-            department=data.get('department', '')
+            department_id=data.get('department_id'),
+            is_active=True
         )
         db.session.add(admin)
         db.session.commit()
         
-        log_action(current_user_id, 'create', 'admin', admin.id)
+        log_action(current_user_id, 'create', 'admin', admin.admin_id)
         
         return jsonify(admin.to_dict()), 201
     except Exception as e:
@@ -608,7 +624,7 @@ def create_admin():
 def update_admin(admin_id):
     """Update admin"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         admin = Admin.query.get_or_404(admin_id)
         data = request.get_json()
         
@@ -636,7 +652,7 @@ def update_admin(admin_id):
 def delete_admin(admin_id):
     """Delete admin"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         admin = Admin.query.get_or_404(admin_id)
         
         db.session.delete(admin.user)
@@ -678,7 +694,7 @@ def get_school(school_id):
 def create_school():
     """Create new school"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         school = School(
@@ -702,7 +718,7 @@ def create_school():
 def update_school(school_id):
     """Update school"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         school = School.query.get_or_404(school_id)
         data = request.get_json()
         
@@ -724,7 +740,7 @@ def update_school(school_id):
 def delete_school(school_id):
     """Delete school"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         school = School.query.get_or_404(school_id)
         
         db.session.delete(school)
@@ -771,7 +787,7 @@ def get_department(dept_id):
 def create_department():
     """Create new department"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         dept = Department(
@@ -796,7 +812,7 @@ def create_department():
 def update_department(dept_id):
     """Update department"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         dept = Department.query.get_or_404(dept_id)
         data = request.get_json()
         
@@ -819,7 +835,7 @@ def update_department(dept_id):
 def delete_department(dept_id):
     """Delete department"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         dept = Department.query.get_or_404(dept_id)
         
         db.session.delete(dept)
@@ -866,7 +882,7 @@ def get_program(program_id):
 def create_program():
     """Create new program"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         program = Program(
@@ -892,7 +908,7 @@ def create_program():
 def update_program(program_id):
     """Update program"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         program = Program.query.get_or_404(program_id)
         data = request.get_json()
         
@@ -916,7 +932,7 @@ def update_program(program_id):
 def delete_program(program_id):
     """Delete program"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         program = Program.query.get_or_404(program_id)
         
         db.session.delete(program)
@@ -963,7 +979,7 @@ def get_unit(unit_id):
 def create_unit():
     """Create new unit"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         unit = Unit(
@@ -989,7 +1005,7 @@ def create_unit():
 def update_unit(unit_id):
     """Update unit"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         unit = Unit.query.get_or_404(unit_id)
         data = request.get_json()
         
@@ -1013,7 +1029,7 @@ def update_unit(unit_id):
 def delete_unit(unit_id):
     """Delete unit"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         unit = Unit.query.get_or_404(unit_id)
         
         db.session.delete(unit)
@@ -1031,8 +1047,8 @@ def get_dashboard_stats():
     """Get dashboard statistics"""
     try:
         stats = {
-            'totalStudents': User.query.filter_by(role='student').count(),
-            'totalLecturers': User.query.filter_by(role='lecturer').count(),
+            'totalStudents': User.query.filter_by(user_type='student').count(),
+            'totalLecturers': User.query.filter_by(user_type='lecturer').count(),
             'totalVenues': Class.query.count(),
             'totalBeacons': Beacon.query.count(),
         }
@@ -1046,7 +1062,7 @@ def get_dashboard_stats():
 def get_profile():
     """Get current user profile"""
     try:
-        user_id = get_jwt_identity()
+        user_id = get_current_user_id()
         user = User.query.get_or_404(user_id)
         return jsonify(user.to_dict()), 200
     except Exception as e:
@@ -1058,7 +1074,7 @@ def get_profile():
 def update_profile():
     """Update current user profile"""
     try:
-        user_id = get_jwt_identity()
+        user_id = get_current_user_id()
         user = User.query.get_or_404(user_id)
         data = request.get_json()
         
@@ -1108,7 +1124,7 @@ def get_venue(venue_id):
 def create_venue():
     """Create new venue"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         venue = Class(
@@ -1136,7 +1152,7 @@ def create_venue():
 def update_venue(venue_id):
     """Update venue"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         venue = Class.query.get_or_404(venue_id)
         data = request.get_json()
         
@@ -1162,7 +1178,7 @@ def update_venue(venue_id):
 def delete_venue(venue_id):
     """Delete venue"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         venue = Class.query.get_or_404(venue_id)
         
         db.session.delete(venue)
@@ -1183,12 +1199,12 @@ def get_beacons():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
-        status = request.args.get('status')
+        beacon_status = request.args.get('beacon_status')
         
         query = Beacon.query
         
-        if status:
-            query = query.filter_by(status=status)
+        if beacon_status:
+            query = query.filter_by(beacon_status=beacon_status)
         
         result = paginate_query(query, page, per_page)
         return jsonify(result), 200
@@ -1212,25 +1228,26 @@ def get_beacon(beacon_id):
 def register_beacon():
     """Register new beacon"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         # Check if beacon already exists
-        existing = Beacon.query.filter_by(uuid=data['uuid']).first()
+        existing = Beacon.query.filter_by(beacon_uuid=data['beacon_uuid']).first()
         if existing:
             return jsonify({'message': 'Beacon already registered'}), 400
         
         beacon = Beacon(
-            uuid=data['uuid'],
-            major=data['major'],
-            minor=data['minor'],
-            name=data.get('name', ''),
-            status='active'
+            beacon_uuid=data['beacon_uuid'],
+            beacon_major=data['beacon_major'],
+            beacon_minor=data['beacon_minor'],
+            beacon_name=data.get('beacon_name', ''),
+            beacon_status='Active',
+            is_active=True
         )
         db.session.add(beacon)
         db.session.commit()
         
-        log_action(current_user_id, 'register', 'beacon', beacon.id)
+        log_action(current_user_id, 'register', 'beacon', beacon.beacon_id)
         
         return jsonify(beacon.to_dict()), 201
     except Exception as e:
@@ -1243,13 +1260,13 @@ def register_beacon():
 def update_beacon(beacon_id):
     """Update beacon"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         beacon = Beacon.query.get_or_404(beacon_id)
         data = request.get_json()
         
-        beacon.name = data.get('name', beacon.name)
-        beacon.status = data.get('status', beacon.status)
-        beacon.battery_level = data.get('batteryLevel', beacon.battery_level)
+        beacon.beacon_name = data.get('beacon_name', beacon.beacon_name)
+        beacon.beacon_status = data.get('beacon_status', beacon.beacon_status)
+        beacon.battery_level = data.get('battery_level', beacon.battery_level)
         
         db.session.commit()
         log_action(current_user_id, 'update', 'beacon', beacon_id)
@@ -1265,7 +1282,7 @@ def update_beacon(beacon_id):
 def delete_beacon(beacon_id):
     """Delete beacon"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         beacon = Beacon.query.get_or_404(beacon_id)
         
         db.session.delete(beacon)
@@ -1283,7 +1300,7 @@ def delete_beacon(beacon_id):
 def assign_beacon(beacon_id):
     """Assign beacon to venue"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         # Check if beacon exists
@@ -1320,7 +1337,7 @@ def assign_beacon(beacon_id):
 def unassign_beacon(beacon_id, venue_id):
     """Unassign beacon from venue"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         
         assignment = ClassBeacon.query.filter_by(
             beacon_id=beacon_id,
@@ -1381,7 +1398,7 @@ def get_timetable_entry(entry_id):
 def create_timetable_entry():
     """Create timetable entry"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         from datetime import time
@@ -1411,7 +1428,7 @@ def create_timetable_entry():
 def update_timetable_entry(entry_id):
     """Update timetable entry"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         entry = TimetableEntry.query.get_or_404(entry_id)
         data = request.get_json()
         
@@ -1443,7 +1460,7 @@ def update_timetable_entry(entry_id):
 def delete_timetable_entry(entry_id):
     """Delete timetable entry"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         entry = TimetableEntry.query.get_or_404(entry_id)
         
         db.session.delete(entry)
@@ -1461,7 +1478,7 @@ def delete_timetable_entry(entry_id):
 def import_timetable():
     """Bulk import timetable entries"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         entries = data.get('entries', [])
         
@@ -1519,7 +1536,7 @@ def get_setting(key):
 def update_settings():
     """Update system settings"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = get_current_user_id()
         data = request.get_json()
         
         for key, value in data.items():

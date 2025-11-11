@@ -47,11 +47,20 @@ copy .env.example .env
 
 # Edit .env and update with your settings
 # - SECRET_KEY: Generate a secure random key
-# - DATABASE_URL: Your PostgreSQL connection string
-# - JWT_SECRET_KEY: Another secure random key
+# - MYSQL_USER: Your MySQL username (default: root)
+# - MYSQL_PASSWORD: Your MySQL password
+# - MYSQL_DATABASE: Database name (default: uniattend)
 ```
 
-### 4. Initialize Database
+**Note:** This application uses **MySQL** as the database. See `MYSQL_SETUP.md` for detailed MySQL setup instructions.
+
+### 4. Create MySQL Database
+
+```sql
+CREATE DATABASE uniattend CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 5. Initialize Database
 
 ```powershell
 # Initialize Flask-Migrate
@@ -64,7 +73,18 @@ flask db migrate -m "Initial migration"
 flask db upgrade
 ```
 
-### 5. Run the Application
+### 6. Seed Database (Optional)
+
+```powershell
+python seed.py
+```
+
+This will create:
+- Admin user: admin@uniattend.com / admin123
+- Sample schools, departments, programs
+- Sample students, lecturers, venues, beacons
+
+### 7. Run the Application
 
 ```powershell
 # Development mode
