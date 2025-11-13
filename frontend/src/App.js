@@ -17,6 +17,7 @@ import AddNewClass from './components/AddNewClass';
 import ScheduleImport from './components/importschedule';
 import ViewList from './components/viewlist';
 import AdminProfile from "./components/AdminProfile";
+import UserManagement from "./components/UserManagement";
 import NotificationContainer from './components/NotificationContainer';
 import './App.css';
 
@@ -66,6 +67,7 @@ function AppContent() {
               <Route path="/venues" element={<Venues />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/add-user" element={<AddNewUser />} />
+              <Route path="/edit-user/:userId" element={<UserManagement />} />
               <Route path="/add-class" element={<AddNewClass />} />
               <Route path="/scheduleimport" element={<ScheduleImport />} />
               <Route path="/viewlist" element={<ViewList />} />

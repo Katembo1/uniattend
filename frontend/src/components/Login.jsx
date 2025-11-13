@@ -46,23 +46,20 @@ function Login() {
 
     setLoading(true);
     try {
-      const response = await authAPI.login(formData);
-      
-      console.log('✓ Login response:', response.data);
-      
-      // Store token
-      localStorage.setItem('authToken', response.data.token);
-      console.log('✓ Token stored:', response.data.token.substring(0, 20) + '...');
-      
-      // Update context
-      login(response.data.user);
-      
-      addNotification('Login successful!', 'success');
-      
-      // Small delay to ensure token is stored before navigation
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 100);
+      // Use context.login which handles the API call, token storage and state updates.
+      const result = await login(formData);
+
+      if (result && result.success) {
+        console.log('✓ Login successful, user:', result.user);
+        // Navigation after successful login
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
+      } else {
+        const errorMsg = result?.error || 'Invalid email or password';
+        setErrors({ general: errorMsg });
+        addNotification(errorMsg, 'error');
+      }
     } catch (error) {
       console.error('Login error:', error);
       const errorMsg = error.response?.data?.message || 'Invalid email or password';

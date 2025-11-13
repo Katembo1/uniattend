@@ -10,10 +10,11 @@ function AddNewUser() {
   const navigate = useNavigate();
   const { addNotification } = useApp();
   const [formData, setFormData] = useState({
+    username: '',
     firstName: '',
     lastName: '',
     email: '',
-    role: 'student',
+    user_type: 'student',
     password: '',
     confirmPassword: '',
   });
@@ -37,22 +38,24 @@ function AddNewUser() {
     if (Object.keys(errors).length === 0) {
       setSubmitting(true);
       try {
-        await userAPI.create({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+        // Prepare payload matching backend expectations
+        const payload = {
+          username: formData.username,
           email: formData.email,
-          role: formData.role,
+          user_type: formData.user_type,
           password: formData.password
-        });
+        };
 
+        await userAPI.create(payload);
         addNotification('User added successfully!', 'success');
         
         // Reset form
         setFormData({
+          username: '',
           firstName: '',
           lastName: '',
           email: '',
-          role: 'student',
+          user_type: 'student',
           password: '',
           confirmPassword: '',
         });
@@ -73,8 +76,11 @@ function AddNewUser() {
 
   const validateForm = (data) => {
     const errors = {};
-    if (!data.firstName.trim()) errors.firstName = 'First name is required';
-    if (!data.lastName.trim()) errors.lastName = 'Last name is required';
+    if (!data.username.trim()) {
+      errors.username = 'Username is required';
+    } else if (data.username.length < 3) {
+      errors.username = 'Username must be at least 3 characters';
+    }
     if (!data.email.trim()) {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(data.email)) {
@@ -112,49 +118,37 @@ function AddNewUser() {
           </div>
           <div className="card-body">
             <form onSubmit={handleSubmit} className="user-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>First Name</label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={formErrors.firstName ? 'input-error' : ''}
-                  />
-                  {formErrors.firstName && <div className="error-message">{formErrors.firstName}</div>}
-                </div>
-
-                <div className="form-group">
-                  <label>Last Name</label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={formErrors.lastName ? 'input-error' : ''}
-                  />
-                  {formErrors.lastName && <div className="error-message">{formErrors.lastName}</div>}
-                </div>
+              <div className="form-group">
+                <label>Username *</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className={formErrors.username ? 'input-error' : ''}
+                  placeholder="Enter username (min 3 characters)"
+                />
+                {formErrors.username && <div className="error-message">{formErrors.username}</div>}
               </div>
 
               <div className="form-group">
-                <label>Email</label>
+                <label>Email *</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   className={formErrors.email ? 'input-error' : ''}
+                  placeholder="user@example.com"
                 />
                 {formErrors.email && <div className="error-message">{formErrors.email}</div>}
               </div>
 
               <div className="form-group">
-                <label>Role</label>
+                <label>User Type *</label>
                 <select 
-                  name="role" 
-                  value={formData.role} 
+                  name="user_type" 
+                  value={formData.user_type} 
                   onChange={handleChange}
                   className="role-select"
                 >
@@ -166,25 +160,27 @@ function AddNewUser() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Password</label>
+                  <label>Password *</label>
                   <input
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     className={formErrors.password ? 'input-error' : ''}
+                    placeholder="Min 6 characters"
                   />
                   {formErrors.password && <div className="error-message">{formErrors.password}</div>}
                 </div>
 
                 <div className="form-group">
-                  <label>Confirm Password</label>
+                  <label>Confirm Password *</label>
                   <input
                     type="password"
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     className={formErrors.confirmPassword ? 'input-error' : ''}
+                    placeholder="Re-enter password"
                   />
                   {formErrors.confirmPassword && <div className="error-message">{formErrors.confirmPassword}</div>}
                 </div>

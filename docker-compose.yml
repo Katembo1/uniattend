@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: uniattend-backend
+    environment:
+      FLASK_ENV: production
+      PORT: 5000
+      CORS_ORIGINS: http://localhost:3000
+      MYSQL_USER: uniuser
+      MYSQL_PASSWORD: unipassword
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: uniattend
+      # DATABASE_URL can override MYSQL_* if provided
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_URL: http://localhost:5000/api
+    container_name: uniattend-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  db:
+    image: mysql:8.2
+    container_name: uniattend-mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: uniattend
+      MYSQL_USER: uniuser
+      MYSQL_PASSWORD: unipassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  default:
+    name: uniattend-net

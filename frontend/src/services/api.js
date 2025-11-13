@@ -162,18 +162,18 @@ export const institutionAPI = {
 
 // ==================== VENUE/CLASS MANAGEMENT ====================
 export const classAPI = {
-  getAll: (params) => apiClient.get('/admin/classes', { params }),
-  getById: (classId) => apiClient.get(`/admin/classes/${classId}`),
-  create: (data) => apiClient.post('/admin/classes', data),
-  update: (classId, data) => apiClient.put(`/admin/classes/${classId}`, data),
-  delete: (classId) => apiClient.delete(`/admin/classes/${classId}`),
+  getAll: (params) => apiClient.get('/admin/venues', { params }),
+  getById: (classId) => apiClient.get(`/admin/venues/${classId}`),
+  create: (data) => apiClient.post('/admin/venues', data),
+  update: (classId, data) => apiClient.put(`/admin/venues/${classId}`, data),
+  delete: (classId) => apiClient.delete(`/admin/venues/${classId}`),
 };
 
 // ==================== BEACON MANAGEMENT ====================
 export const beaconAPI = {
   getAll: (params) => apiClient.get('/admin/beacons', { params }),
   getById: (beaconId) => apiClient.get(`/admin/beacons/${beaconId}`),
-  create: (data) => apiClient.post('/admin/beacons', data),
+  create: (data) => apiClient.post('/admin/beacons/register', data),
   update: (beaconId, data) => apiClient.put(`/admin/beacons/${beaconId}`, data),
   delete: (beaconId) => apiClient.delete(`/admin/beacons/${beaconId}`),
   getUnassigned: () => apiClient.get('/admin/beacons/unassigned'),
@@ -188,7 +188,12 @@ export const timetableAPI = {
   create: (data) => apiClient.post('/admin/timetable', data),
   update: (timetableId, data) => apiClient.put(`/admin/timetable/${timetableId}`, data),
   delete: (timetableId) => apiClient.delete(`/admin/timetable/${timetableId}`),
-  bulkImport: (data) => apiClient.post('/admin/timetable/bulk-import', data),
+  bulkImport: (data) => apiClient.post('/admin/timetable/import', data),
+  importFile: (formData) => apiClient.post('/admin/timetable/import-file', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 };
 
 // ==================== SYSTEM SETTINGS ====================

@@ -13,11 +13,7 @@ function AddBeacon() {
     beacon_uuid: '',
     beacon_name: '',
     beacon_major: '',
-    beacon_minor: '',
-    mac_address: '',
-    manufacturer: 'Generic',
-    model: '',
-    beacon_status: 'Active'
+    beacon_minor: ''
   });
 
   const handleChange = (e) => {
@@ -33,16 +29,22 @@ function AddBeacon() {
     setLoading(true);
 
     try {
-      // Convert major/minor to integers
+      // Prepare payload with correct data types
       const payload = {
-        ...formData,
+        beacon_uuid: formData.beacon_uuid.trim(),
         beacon_major: parseInt(formData.beacon_major),
-        beacon_minor: parseInt(formData.beacon_minor)
+        beacon_minor: parseInt(formData.beacon_minor),
+        beacon_name: formData.beacon_name.trim() || `Beacon ${formData.beacon_major}-${formData.beacon_minor}`
       };
 
-      await beaconAPI.register(payload);
+      const response = await beaconAPI.create(payload);
+      console.log('Beacon registered:', response.data);
       addNotification('Beacon registered successfully!', 'success');
-      navigate('/venues');
+      
+      // Navigate to venues page after short delay
+      setTimeout(() => {
+        navigate('/venues');
+      }, 500);
     } catch (error) {
       console.error('Error registering beacon:', error);
       const errorMsg = error.response?.data?.message || 'Failed to register beacon';
@@ -93,20 +95,9 @@ function AddBeacon() {
                   name="beacon_name" 
                   value={formData.beacon_name}
                   onChange={handleChange}
-                  placeholder="e.g., Main Hall Beacon"
+                  placeholder="e.g., Main Hall Beacon (optional)"
                 />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="mac_address">MAC Address</label>
-                <input 
-                  type="text" 
-                  id="mac_address" 
-                  name="mac_address" 
-                  value={formData.mac_address}
-                  onChange={handleChange}
-                  placeholder="e.g., AA:BB:CC:DD:EE:FF"
-                />
+                <small>Optional - will auto-generate if left blank</small>
               </div>
             </div>
 
@@ -142,48 +133,6 @@ function AddBeacon() {
                 />
                 <small>Integer between 0-65535</small>
               </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="manufacturer">Manufacturer</label>
-                <input 
-                  type="text" 
-                  id="manufacturer" 
-                  name="manufacturer" 
-                  value={formData.manufacturer}
-                  onChange={handleChange}
-                  placeholder="e.g., Estimote, Kontakt.io"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="model">Model</label>
-                <input 
-                  type="text" 
-                  id="model" 
-                  name="model" 
-                  value={formData.model}
-                  onChange={handleChange}
-                  placeholder="e.g., Beacon Pro"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="beacon_status">Status *</label>
-              <select 
-                id="beacon_status" 
-                name="beacon_status"
-                value={formData.beacon_status}
-                onChange={handleChange}
-                required
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Faulty">Faulty</option>
-              </select>
             </div>
 
             <div className="form-actions">

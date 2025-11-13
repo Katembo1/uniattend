@@ -10,15 +10,13 @@ function AddVenue() {
   const { addNotification } = useApp();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    class_code: '',
-    class_name: '',
+    code: '',
+    name: '',
     building: '',
     floor: '',
     capacity: '',
-    class_type: 'Lecture Hall',
-    has_projector: false,
-    has_computers: false,
-    location_description: ''
+    type: 'lecture_hall',
+    description: ''
   });
 
   const handleChange = (e) => {
@@ -64,12 +62,12 @@ function AddVenue() {
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="class_code">Venue Code *</label>
+                <label htmlFor="code">Venue Code *</label>
                 <input 
                   type="text" 
-                  id="class_code" 
-                  name="class_code" 
-                  value={formData.class_code}
+                  id="code" 
+                  name="code" 
+                  value={formData.code}
                   onChange={handleChange}
                   placeholder="e.g., LHA, LB101"
                   required 
@@ -77,12 +75,12 @@ function AddVenue() {
               </div>
               
               <div className="form-group">
-                <label htmlFor="class_name">Venue Name *</label>
+                <label htmlFor="name">Venue Name *</label>
                 <input 
                   type="text" 
-                  id="class_name" 
-                  name="class_name" 
-                  value={formData.class_name}
+                  id="name" 
+                  name="name" 
+                  value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g., Lecture Hall A"
                   required 
@@ -127,61 +125,37 @@ function AddVenue() {
                   value={formData.capacity}
                   onChange={handleChange}
                   placeholder="e.g., 100"
+                  min="0"
                   required 
                 />
               </div>
               
               <div className="form-group">
-                <label htmlFor="class_type">Venue Type *</label>
+                <label htmlFor="type">Venue Type *</label>
                 <select 
-                  id="class_type" 
-                  name="class_type"
-                  value={formData.class_type}
+                  id="type" 
+                  name="type"
+                  value={formData.type}
                   onChange={handleChange}
                   required
                 >
-                  <option value="Lecture Hall">Lecture Hall</option>
-                  <option value="Laboratory">Laboratory</option>
-                  <option value="Tutorial Room">Tutorial Room</option>
-                  <option value="Seminar Room">Seminar Room</option>
+                  <option value="lecture_hall">Lecture Hall</option>
+                  <option value="lab">Laboratory</option>
+                  <option value="tutorial_room">Tutorial Room</option>
+                  <option value="seminar_room">Seminar Room</option>
+                  <option value="auditorium">Auditorium</option>
                 </select>
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group checkbox-group">
-                <label>
-                  <input 
-                    type="checkbox" 
-                    name="has_projector"
-                    checked={formData.has_projector}
-                    onChange={handleChange}
-                  />
-                  <span>Has Projector</span>
-                </label>
-              </div>
-              
-              <div className="form-group checkbox-group">
-                <label>
-                  <input 
-                    type="checkbox" 
-                    name="has_computers"
-                    checked={formData.has_computers}
-                    onChange={handleChange}
-                  />
-                  <span>Has Computers</span>
-                </label>
-              </div>
-            </div>
-
             <div className="form-group">
-              <label htmlFor="location_description">Location Description</label>
+              <label htmlFor="description">Description</label>
               <textarea 
-                id="location_description" 
-                name="location_description"
-                value={formData.location_description}
+                id="description" 
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="Additional location details..."
+                placeholder="Additional venue details..."
                 rows="3"
               />
             </div>

@@ -12,6 +12,8 @@ function Users() {
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, per_page: 20, total: 0 });
     const [retryCount, setRetryCount] = useState(0);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
     const { addNotification } = useApp();
     const MAX_RETRIES = 3;
 
@@ -102,16 +104,26 @@ function Users() {
         setSearchTerm(event.target.value);
     };
 
-    const handleDelete = async (userId) => {
-        if (!window.confirm('Are you sure you want to delete this user?')) return;
+    const handleDelete = (user) => {
+        setSelectedUser(user);
+        setShowDeleteModal(true);
+    };
 
+    const confirmDelete = async () => {
+        if (!selectedUser) return;
+
+        setLoading(true);
         try {
-            await userAPI.delete(userId);
+            await userAPI.delete(selectedUser.id);
             addNotification('User deleted successfully', 'success');
+            setShowDeleteModal(false);
+            setSelectedUser(null);
             fetchUsers(); // Refresh list
         } catch (error) {
             console.error('Error deleting user:', error);
-            addNotification('Failed to delete user', 'error');
+            addNotification(error.response?.data?.message || 'Failed to delete user', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -239,7 +251,7 @@ function Users() {
                                                             <button 
                                                                 className="action-btn" 
                                                                 title="Delete"
-                                                                onClick={() => handleDelete(user.id)}
+                                                                onClick={() => handleDelete(user)}
                                                             >
                                                                 <span role="img" aria-label="Delete">🗑️</span>
                                                             </button>
@@ -273,6 +285,43 @@ function Users() {
                         </div>
                     )}
                 </div>
+
+                {/* Delete Confirmation Modal */}
+                {showDeleteModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <h2>Confirm Delete</h2>
+                            <p>Are you sure you want to delete this user?</p>
+                            {selectedUser && (
+                                <div className="user-info">
+                                    <p><strong>Name:</strong> {selectedUser.first_name} {selectedUser.last_name}</p>
+                                    <p><strong>Email:</strong> {selectedUser.email}</p>
+                                    <p><strong>Role:</strong> {selectedUser.role}</p>
+                                </div>
+                            )}
+                            <p className="warning-text">This action cannot be undone.</p>
+                            <div className="modal-actions">
+                                <button 
+                                    className="btn btn-danger" 
+                                    onClick={confirmDelete}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Deleting...' : 'Delete User'}
+                                </button>
+                                <button 
+                                    className="btn btn-secondary" 
+                                    onClick={() => {
+                                        setShowDeleteModal(false);
+                                        setSelectedUser(null);
+                                    }}
+                                    disabled={loading}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

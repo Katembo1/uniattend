@@ -253,9 +253,22 @@ def update_user(user_id):
         user = User.query.get_or_404(user_id)
         data = request.get_json()
         
-        user.username = data.get('username', user.username)
-        user.email = data.get('email', user.email)
-        user.is_active = data.get('is_active', user.is_active)
+        # Only update fields that are provided
+        if 'username' in data:
+            user.username = data['username']
+        if 'email' in data:
+            user.email = data['email']
+        if 'firstName' in data:
+            user.first_name = data['firstName']
+        if 'lastName' in data:
+            user.last_name = data['lastName']
+        if 'role' in data:
+            user.role = data['role']
+        if 'status' in data:
+            # Map status to is_active
+            user.is_active = data['status'] == 'active'
+        if 'is_active' in data:
+            user.is_active = data['is_active']
         
         db.session.commit()
         
@@ -1078,9 +1091,13 @@ def update_profile():
         user = User.query.get_or_404(user_id)
         data = request.get_json()
         
-        user.first_name = data.get('firstName', user.first_name)
-        user.last_name = data.get('lastName', user.last_name)
-        user.email = data.get('email', user.email)
+        # Only update fields that are provided
+        if 'firstName' in data:
+            user.first_name = data['firstName']
+        if 'lastName' in data:
+            user.last_name = data['lastName']
+        if 'email' in data:
+            user.email = data['email']
         
         db.session.commit()
         log_action(user_id, 'update', 'profile', user_id)
@@ -1376,7 +1393,34 @@ def get_timetable():
         if venue_id:
             query = query.filter_by(class_id=venue_id)
         
-        result = paginate_query(query, page, per_page)
+        # Get paginated results
+        page = max(1, page)
+        per_page = min(per_page, 100)
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Build response with relationships
+        items = []
+        for entry in paginated.items:
+            entry_dict = entry.to_dict()
+            # Add related objects
+            if entry.unit:
+                entry_dict['unit'] = entry.unit.to_dict()
+            if entry.lecturer:
+                entry_dict['lecturer'] = entry.lecturer.to_dict()
+            if entry.venue:
+                entry_dict['class'] = entry.venue.to_dict()
+            items.append(entry_dict)
+        
+        result = {
+            'items': items,
+            'total': paginated.total,
+            'page': page,
+            'per_page': per_page,
+            'pages': paginated.pages,
+            'has_next': paginated.has_next,
+            'has_prev': paginated.has_prev
+        }
+        
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
@@ -1485,23 +1529,97 @@ def import_timetable():
         from datetime import time
         
         created_count = 0
-        for entry_data in entries:
-            entry = TimetableEntry(
-                unit_id=entry_data['unitId'],
-                lecturer_id=entry_data['lecturerId'],
-                class_id=entry_data['venueId'],
-                day_of_week=entry_data['dayOfWeek'],
-                start_time=time.fromisoformat(entry_data['startTime']),
-                end_time=time.fromisoformat(entry_data['endTime']),
-                session_type=entry_data.get('sessionType', 'lecture')
-            )
-            db.session.add(entry)
-            created_count += 1
+        errors = []
         
-        db.session.commit()
-        log_action(current_user_id, 'import', 'timetable', None, {'count': created_count})
+        for idx, entry_data in enumerate(entries):
+            try:
+                entry = TimetableEntry(
+                    unit_id=entry_data['unitId'],
+                    lecturer_id=entry_data['lecturerId'],
+                    class_id=entry_data['venueId'],
+                    day_of_week=entry_data['dayOfWeek'],
+                    start_time=time.fromisoformat(entry_data['startTime']),
+                    end_time=time.fromisoformat(entry_data['endTime']),
+                    session_type=entry_data.get('sessionType', 'lecture')
+                )
+                db.session.add(entry)
+                created_count += 1
+            except Exception as e:
+                errors.append(f"Row {idx + 1}: {str(e)}")
         
-        return jsonify({'message': f'{created_count} entries imported successfully'}), 201
+        if created_count > 0:
+            db.session.commit()
+            log_action(current_user_id, 'import', 'timetable', None, {'count': created_count})
+        
+        response = {
+            'message': f'{created_count} entries imported successfully',
+            'created': created_count,
+            'errors': errors
+        }
+        
+        return jsonify(response), 201 if created_count > 0 else 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+
+@api_bp.route('/admin/timetable/import-file', methods=['POST'])
+@jwt_required()
+def import_timetable_file():
+    """Import timetable from CSV file"""
+    try:
+        current_user_id = get_current_user_id()
+        
+        if 'file' not in request.files:
+            return jsonify({'message': 'No file provided'}), 400
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({'message': 'No file selected'}), 400
+        
+        if not file.filename.endswith('.csv'):
+            return jsonify({'message': 'Only CSV files are supported'}), 400
+        
+        import csv
+        import io
+        from datetime import time
+        
+        # Read CSV file
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_reader = csv.DictReader(stream)
+        
+        created_count = 0
+        errors = []
+        
+        for idx, row in enumerate(csv_reader, start=2):  # Start at 2 (row 1 is header)
+            try:
+                # Map CSV columns to database fields
+                entry = TimetableEntry(
+                    unit_id=int(row.get('unit_id') or row.get('unitId')),
+                    lecturer_id=int(row.get('lecturer_id') or row.get('lecturerId')),
+                    class_id=int(row.get('class_id') or row.get('venueId')),
+                    day_of_week=row.get('day_of_week') or row.get('dayOfWeek'),
+                    start_time=time.fromisoformat(row.get('start_time') or row.get('startTime')),
+                    end_time=time.fromisoformat(row.get('end_time') or row.get('endTime')),
+                    session_type=row.get('session_type') or row.get('sessionType') or 'lecture'
+                )
+                db.session.add(entry)
+                created_count += 1
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+        
+        if created_count > 0:
+            db.session.commit()
+            log_action(current_user_id, 'import_file', 'timetable', None, {'count': created_count})
+        
+        response = {
+            'message': f'{created_count} entries imported successfully',
+            'created': created_count,
+            'errors': errors
+        }
+        
+        return jsonify(response), 201 if created_count > 0 else 400
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': str(e)}), 500
