@@ -54,6 +54,7 @@ export const AppProvider = ({ children }) => {
     };
 
     loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Login function

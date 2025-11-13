@@ -90,7 +90,7 @@ const Sidebar = ({ isOpen, toggleMenu }) => {
     
     // Try to get name from admin_profile or user object
     if (user.admin_profile) {
-      const { first_name, last_name, title } = user.admin_profile;
+      const { first_name, last_name } = user.admin_profile;
       const name = `${first_name || ''} ${last_name || ''}`.trim();
       return name || user.username || user.email;
     }

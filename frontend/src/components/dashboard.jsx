@@ -101,6 +101,7 @@ function Dashboard() {
       isMounted = false;
       clearTimeout(timeoutId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addNotification]);
 
   return (
