@@ -9,3 +9,4 @@ python-dotenv==1.0.0
 Werkzeug==3.0.1
 SQLAlchemy==2.0.23
 mysqlclient
+gunicorn==21.2.0
