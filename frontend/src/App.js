@@ -77,7 +77,7 @@ function AppContent() {
               <Route path="/admin-profile" element={<AdminProfile />} />
               <Route path="/activities" element={<Activities />} />
               <Route path="/schedules" element={<Schedules />} />
-              <Route path="/classes" element={<Classes />} />
+              <Route path="/classes" element={<Scheduling />} />
             </Routes>
           </main>
         </div>
