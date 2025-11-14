@@ -2065,6 +2065,77 @@ def get_audit_summary():
 
 
 # ==================== REPORTS & ANALYTICS ====================
+@api_bp.route('/admin/reports/attendance/overall', methods=['GET'])
+@jwt_required()
+def get_attendance_overall():
+    """Get overall attendance reports"""
+    try:
+        period = request.args.get('period', 'last7days')
+        
+        # Get basic stats
+        total_students = Student.query.filter_by(is_active=True).count()
+        active_units = Unit.query.filter_by(is_active=True).count()
+        
+        # Mock attendance data (replace with actual attendance records when available)
+        reports = [
+            {
+                'course': 'Computer Science 101',
+                'date': '2025-11-13',
+                'totalStudents': 45,
+                'present': 42,
+                'absent': 3,
+                'attendance': '93%',
+                'status': 'Complete'
+            },
+            {
+                'course': 'Mathematics 202',
+                'date': '2025-11-12',
+                'totalStudents': 38,
+                'present': 35,
+                'absent': 3,
+                'attendance': '92%',
+                'status': 'Complete'
+            },
+            {
+                'course': 'Physics 101',
+                'date': '2025-11-11',
+                'totalStudents': 50,
+                'present': 38,
+                'absent': 12,
+                'attendance': '76%',
+                'status': 'Complete'
+            },
+            {
+                'course': 'Chemistry Lab',
+                'date': '2025-11-10',
+                'totalStudents': 30,
+                'present': 21,
+                'absent': 9,
+                'attendance': '70%',
+                'status': 'Complete'
+            }
+        ]
+        
+        result = {
+            'reports': reports,
+            'items': reports,
+            'stats': {
+                'totalStudents': total_students,
+                'activeCourses': active_units,
+                'averageAttendance': 82.8,
+                'atRiskCount': 5
+            },
+            'totalStudents': total_students,
+            'activeCourses': active_units,
+            'averageAttendance': 82.8,
+            'atRiskCount': 5
+        }
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+
 @api_bp.route('/admin/reports/attendance/stats', methods=['GET'])
 @jwt_required()
 def get_attendance_stats():
