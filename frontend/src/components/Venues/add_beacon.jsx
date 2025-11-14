@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './css/AddBeacon.css';
-import Sidebar from './sidebar';
-import { beaconAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import '../css/AddBeacon.css';
+import Sidebar from '../Common/sidebar';
+import { beaconAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function AddBeacon() {
   const navigate = useNavigate();
@@ -160,3 +160,4 @@ function AddBeacon() {
 }
 
 export default AddBeacon;
+

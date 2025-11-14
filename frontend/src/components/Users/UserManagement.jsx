@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar';
-import { userAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
-import './css/Styles.css';
+import Sidebar from '../Common/sidebar';
+import { userAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
+import '../css/Styles.css';
 
 function UserManagement() {
     const { userId } = useParams();
@@ -36,8 +36,8 @@ function UserManagement() {
                 email: user.email || '',
                 firstName: user.first_name || '',
                 lastName: user.last_name || '',
-                role: user.role || 'student',
-                status: user.status || 'active'
+                role: user.user_type || 'student', // Map user_type from backend
+                status: user.is_active ? 'active' : 'inactive' // Map is_active to status
             });
         } catch (error) {
             console.error('Error fetching user:', error);
@@ -240,3 +240,5 @@ function UserManagement() {
 }
 
 export default UserManagement;
+
+

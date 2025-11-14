@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
-import './css/Login.css';
+import { useApp } from '../../context/AppContext';
+import '../css/Login.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { login, addNotification } = useApp();
+  const { login, addNotification, isAuthenticated } = useApp();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -13,12 +13,18 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Clear any existing session on mount and redirect if already authenticated
+  useEffect(() => {
+    // If user is already authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
-    }
+    // Clear all errors when user starts typing
+    setErrors({});
   };
 
   const validateForm = () => {
@@ -129,3 +135,5 @@ function Login() {
 }
 
 export default Login;
+
+

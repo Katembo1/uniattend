@@ -9,10 +9,11 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 8000, // 8 seconds timeout to prevent resource overload
+  timeout: 10000, // 8 seconds timeout to prevent resource overload
 });
 
 // Request interceptor to add auth token
+//auth 
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -47,8 +48,13 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
       console.warn('⚠ 401 Unauthorized - Token invalid or expired');
+      
+      // Clear all auth data
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
+      
+      // Clear session storage as well
+      sessionStorage.clear();
       
       // Show notification if available
       if (window.showNotification) {
@@ -57,7 +63,8 @@ apiClient.interceptors.response.use(
       
       // Only redirect if not already on login page
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+        // Force a full page reload to reset all state
+        window.location.replace('/login');
       }
     } else if (error.response?.status === 422) {
       // Unprocessable Entity - validation error
@@ -247,6 +254,7 @@ export const reportsAPI = {
 export const dashboardAPI = {
   getStats: () => apiClient.get('/admin/dashboard/stats'),
   getRecentActivity: (params) => apiClient.get('/admin/dashboard/recent-activity', { params }),
+  deleteActivity: (logId) => apiClient.delete(`/admin/dashboard/activity/${logId}`),
 };
 
 // ==================== PROFILE ====================

@@ -92,12 +92,18 @@ export const AppProvider = ({ children }) => {
       // Clear localStorage
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
+      
+      // Clear session storage
+      sessionStorage.clear();
 
       // Clear state
       setUser(null);
       setIsAuthenticated(false);
 
       addNotification('Logged out successfully', 'info');
+      
+      // Redirect to login
+      window.location.replace('/login');
     }
   };
 

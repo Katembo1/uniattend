@@ -1,37 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
-import Sidebar from './components/sidebar'; // Import the Sidebar component
-import Login from './components/Login';
-import AddBeacon from './components/add_beacon';
-import AddVenue from './components/add_venue';
-import Dashboard from './components/dashboard';
-import Reports from './components/reports';
-import Scheduling from './components/scheduling';
-import Security from './components/security';
-import Settings from './components/settings';
-import Users from './components/users';
-import Venues from './components/venues';
-import AddNewUser from './components/newuser';
-import AddNewClass from './components/AddNewClass';
-import ScheduleImport from './components/importschedule';
-import ViewList from './components/viewlist';
-import AdminProfile from "./components/AdminProfile";
-import UserManagement from "./components/UserManagement";
-import NotificationContainer from './components/NotificationContainer';
+import Sidebar from './components/Common/sidebar';
+import Login from './components/Auth/Login';
+import AddBeacon from './components/Venues/add_beacon';
+import AddVenue from './components/Venues/add_venue';
+import Dashboard from './components/Common/dashboard';
+import Reports from './components/Reports/reports';
+import Scheduling from './components/Scheduling/scheduling';
+import Security from './components/Settings/security';
+import Settings from './components/Settings/settings';
+import Users from './components/Users/users';
+import Venues from './components/Venues/venues';
+import AddNewUser from './components/Users/newuser';
+import AddNewClass from './components/Scheduling/AddNewClass';
+import ScheduleImport from './components/Scheduling/importschedule';
+import ViewList from './components/Common/viewlist';
+import AdminProfile from "./components/Auth/AdminProfile";
+import UserManagement from "./components/Users/UserManagement";
+import Activities from "./components/Common/activities";
+import NotificationContainer from './components/Common/NotificationContainer';
 import './App.css';
 
 function AppContent() {
   const { addNotification } = useApp();
   
   useEffect(() => {
-    document.title = 'Tech High';
+    document.title = 'UniAttend - Attendance Management';
     
     // Expose notification function globally for API interceptor
     window.showNotification = addNotification;
     
     return () => {
-      document.title = 'Tech High';
+      document.title = 'UniAttend';
       window.showNotification = null;
     };
   }, [addNotification]);
@@ -72,6 +73,7 @@ function AppContent() {
               <Route path="/scheduleimport" element={<ScheduleImport />} />
               <Route path="/viewlist" element={<ViewList />} />
               <Route path="/admin-profile" element={<AdminProfile />} />
+              <Route path="/activities" element={<Activities />} />
             </Routes>
           </main>
         </div>

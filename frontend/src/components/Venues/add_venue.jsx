@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar';
-import { classAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
-import './css/AddVenue.css';
+import Sidebar from '../Common/sidebar';
+import { classAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
+import '../css/AddVenue.css';
 
 function AddVenue() {
   const navigate = useNavigate();
@@ -185,3 +185,4 @@ function AddVenue() {
 }
 
 export default AddVenue;
+

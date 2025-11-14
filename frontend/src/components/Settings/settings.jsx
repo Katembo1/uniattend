@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Styles.css';
-import Sidebar from './sidebar';
+import '../css/Styles.css';
+import Sidebar from '../Common/sidebar';
 
 function Settings() {
     const [activeTab, setActiveTab] = useState('General');
@@ -86,3 +86,4 @@ function Settings() {
 }
 
 export default Settings;
+

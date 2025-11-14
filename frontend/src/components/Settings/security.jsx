@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Styles.css';
-import Sidebar from './sidebar';
+import '../css/Styles.css';
+import Sidebar from '../Common/sidebar';
 
 function Security() {
     const [activeTab, setActiveTab] = useState('Authentication');
@@ -102,3 +102,4 @@ function Security() {
 }
 
 export default Security;
+

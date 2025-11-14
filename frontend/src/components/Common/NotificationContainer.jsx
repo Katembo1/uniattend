@@ -1,6 +1,6 @@
 import React from 'react';
-import { useApp } from '../context/AppContext';
-import './NotificationContainer.css';
+import { useApp } from '../../context/AppContext';
+import '../NotificationContainer.css';
 
 const NotificationContainer = () => {
   const { notifications, removeNotification } = useApp();
@@ -38,3 +38,6 @@ const NotificationContainer = () => {
 };
 
 export default NotificationContainer;
+
+
+

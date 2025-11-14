@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Styles.css';
-import Sidebar from './sidebar';
-import { userAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import '../css/Styles.css';
+import Sidebar from '../Common/sidebar';
+import { userAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function Users() {
     const [activeFilter, setActiveFilter] = useState('All Users');
@@ -40,20 +40,31 @@ function Users() {
         }, 8000); // 8 second timeout
         
         try {
-            // Determine role filter
-            let role = null;
-            if (activeFilter === 'Students') role = 'student';
-            else if (activeFilter === 'Lecturers') role = 'lecturer';
-            else if (activeFilter === 'Admins') role = 'admin';
+            // Determine user_type filter for backend
+            let user_type = null;
+            if (activeFilter === 'Students') user_type = 'student';
+            else if (activeFilter === 'Lecturers') user_type = 'lecturer';
+            else if (activeFilter === 'Admins') user_type = 'admin';
 
             const response = await userAPI.getAll({
                 page: pagination.page,
                 per_page: pagination.per_page,
-                role: role
+                user_type: user_type
             });
 
             clearTimeout(timeoutId);
-            setUsers(response.data.items || []);
+            
+            // Map backend fields to frontend display
+            const mappedUsers = (response.data.items || []).map(user => ({
+                ...user,
+                id: user.user_id || user.id,
+                role: user.user_type || 'student', // Map user_type to role
+                status: user.is_active ? 'active' : 'inactive', // Map is_active to status
+                first_name: user.first_name || '',
+                last_name: user.last_name || ''
+            }));
+            
+            setUsers(mappedUsers);
             setPagination(prev => ({
                 ...prev,
                 total: response.data.total,
@@ -214,16 +225,16 @@ function Users() {
                                         ) : (
                                             filteredUsers.map(user => (
                                                 <tr key={user.id}>
-                                                    <td>{user.first_name} {user.last_name}</td>
+                                                    <td>{user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'N/A'}</td>
                                                     <td>{user.email}</td>
                                                     <td>
                                                         <span className={`role-badge ${user.role}`}>
-                                                            {user.role}
+                                                            {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'N/A'}
                                                         </span>
                                                     </td>
                                                     <td>
                                                         <span className={`status-badge ${user.status}`}>
-                                                            {user.status}
+                                                            {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'N/A'}
                                                         </span>
                                                     </td>
                                                     <td>
@@ -294,9 +305,10 @@ function Users() {
                             <p>Are you sure you want to delete this user?</p>
                             {selectedUser && (
                                 <div className="user-info">
-                                    <p><strong>Name:</strong> {selectedUser.first_name} {selectedUser.last_name}</p>
+                                    <p><strong>Name:</strong> {selectedUser.name || `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || selectedUser.username || 'N/A'}</p>
                                     <p><strong>Email:</strong> {selectedUser.email}</p>
-                                    <p><strong>Role:</strong> {selectedUser.role}</p>
+                                    <p><strong>Role:</strong> {selectedUser.role ? selectedUser.role.charAt(0).toUpperCase() + selectedUser.role.slice(1) : 'N/A'}</p>
+                                    <p><strong>Status:</strong> {selectedUser.status ? selectedUser.status.charAt(0).toUpperCase() + selectedUser.status.slice(1) : 'N/A'}</p>
                                 </div>
                             )}
                             <p className="warning-text">This action cannot be undone.</p>
@@ -328,3 +340,5 @@ function Users() {
 }
 
 export default Users;
+
+

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Styles.css';
-import Sidebar from './sidebar';
-import { profileAPI, authAPI, auditAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import '../css/Styles.css';
+import Sidebar from '../Common/sidebar';
+import { profileAPI, authAPI, auditAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 export default function AdminProfile() {
     const [activeTab, setActiveTab] = useState('Profile Information');
@@ -384,3 +384,4 @@ export default function AdminProfile() {
         </div>
     );
 }
+

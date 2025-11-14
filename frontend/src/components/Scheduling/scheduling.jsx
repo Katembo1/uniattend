@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom'; 
-import './css/Styles.css'
-import Sidebar from './sidebar';
-import { timetableAPI, institutionAPI, lecturerAPI, classAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import '../css/Styles.css'
+import Sidebar from '../Common/sidebar';
+import { timetableAPI, institutionAPI, lecturerAPI, classAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function Scheduling() {
     const [activeTab, setActiveTab] = useState('All Classes');
@@ -592,3 +592,4 @@ function Scheduling() {
 }
 
 export default Scheduling;
+

@@ -176,7 +176,7 @@ def change_password():
 @api_bp.route('/admin/users', methods=['GET'])
 @jwt_required()
 def get_users():
-    """Get all users"""
+    """Get all users with profile information"""
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
@@ -191,7 +191,47 @@ def get_users():
             active_val = is_active.lower() == 'true'
             query = query.filter_by(is_active=active_val)
         
-        result = paginate_query(query, page, per_page)
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Enhance user data with profile information
+        users_data = []
+        for user in paginated.items:
+            user_dict = user.to_dict()
+            
+            # Add name from appropriate profile table
+            if user.user_type == 'admin':
+                admin = Admin.query.filter_by(user_id=user.user_id).first()
+                if admin:
+                    user_dict['first_name'] = admin.first_name
+                    user_dict['last_name'] = admin.last_name
+                    user_dict['name'] = f"{admin.first_name} {admin.last_name}"
+            elif user.user_type == 'lecturer':
+                lecturer = Lecturer.query.filter_by(user_id=user.user_id).first()
+                if lecturer:
+                    user_dict['first_name'] = lecturer.first_name
+                    user_dict['last_name'] = lecturer.last_name
+                    user_dict['name'] = f"{lecturer.first_name} {lecturer.last_name}"
+            elif user.user_type == 'student':
+                student = Student.query.filter_by(user_id=user.user_id).first()
+                if student:
+                    user_dict['first_name'] = student.first_name
+                    user_dict['last_name'] = student.last_name
+                    user_dict['name'] = f"{student.first_name} {student.last_name}"
+            
+            # Add default name if not found
+            if 'name' not in user_dict:
+                user_dict['name'] = user.username
+            
+            users_data.append(user_dict)
+        
+        result = {
+            'items': users_data,
+            'total': paginated.total,
+            'page': paginated.page,
+            'pages': paginated.pages,
+            'per_page': per_page
+        }
+        
         return jsonify(result), 200
         
     except Exception as e:
@@ -201,10 +241,36 @@ def get_users():
 @api_bp.route('/admin/users/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
-    """Get user by ID"""
+    """Get user by ID with profile information"""
     try:
         user = User.query.get_or_404(user_id)
-        return jsonify(user.to_dict()), 200
+        user_dict = user.to_dict()
+        
+        # Add profile information based on user type
+        if user.user_type == 'admin':
+            admin = Admin.query.filter_by(user_id=user.user_id).first()
+            if admin:
+                user_dict['first_name'] = admin.first_name
+                user_dict['last_name'] = admin.last_name
+                user_dict['name'] = f"{admin.first_name} {admin.last_name}"
+        elif user.user_type == 'lecturer':
+            lecturer = Lecturer.query.filter_by(user_id=user.user_id).first()
+            if lecturer:
+                user_dict['first_name'] = lecturer.first_name
+                user_dict['last_name'] = lecturer.last_name
+                user_dict['name'] = f"{lecturer.first_name} {lecturer.last_name}"
+        elif user.user_type == 'student':
+            student = Student.query.filter_by(user_id=user.user_id).first()
+            if student:
+                user_dict['first_name'] = student.first_name
+                user_dict['last_name'] = student.last_name
+                user_dict['name'] = f"{student.first_name} {student.last_name}"
+        
+        # Add default name if not found
+        if 'name' not in user_dict:
+            user_dict['name'] = user.username
+        
+        return jsonify(user_dict), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
@@ -1067,6 +1133,69 @@ def get_dashboard_stats():
         }
         return jsonify(stats), 200
     except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+
+@api_bp.route('/admin/dashboard/recent-activity', methods=['GET'])
+@jwt_required()
+def get_recent_activity():
+    """Get recent activity from audit logs"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        query = AuditLog.query.order_by(AuditLog.created_at.desc())
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        activities = []
+        for log in paginated.items:
+            activity = {
+                'id': log.log_id,
+                'action_type': log.action_type,
+                'entity_type': log.entity_type,
+                'entity_id': log.entity_id,
+                'description': log.action_description,
+                'user_id': log.user_id,
+                'created_at': log.created_at.isoformat() if log.created_at else None,
+                'completed': False,  # Default state for activity tracking
+            }
+            
+            # Get user info if available
+            if log.user:
+                activity['username'] = log.user.username
+                activity['user_email'] = log.user.email
+            
+            activities.append(activity)
+        
+        result = {
+            'items': activities,
+            'total': paginated.total,
+            'page': paginated.page,
+            'pages': paginated.pages,
+            'per_page': per_page
+        }
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+
+@api_bp.route('/admin/dashboard/activity/<int:log_id>', methods=['DELETE'])
+@jwt_required()
+def delete_activity(log_id):
+    """Delete an activity log"""
+    try:
+        current_user_id = get_current_user_id()
+        log = AuditLog.query.get_or_404(log_id)
+        
+        db.session.delete(log)
+        db.session.commit()
+        
+        log_action(current_user_id, 'delete', 'audit_log', log_id, f'Deleted activity log {log_id}')
+        
+        return jsonify({'message': 'Activity deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'message': str(e)}), 500
 
 

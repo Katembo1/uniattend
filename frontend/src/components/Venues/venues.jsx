@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Styles.css'
-import Sidebar from './sidebar';
-import { classAPI, beaconAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import '../css/Styles.css'
+import Sidebar from '../Common/sidebar';
+import { classAPI, beaconAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function Venues() {
     const [activeFilter, setActiveFilter] = useState('All Locations');
@@ -602,3 +602,4 @@ function Venues() {
 }
 
 export default Venues;
+

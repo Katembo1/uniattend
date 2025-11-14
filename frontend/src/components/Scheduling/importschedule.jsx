@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar';
-import { timetableAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
-import './css/Styles.css';
+import Sidebar from '../Common/sidebar';
+import { timetableAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
+import '../css/Styles.css';
 
 function ScheduleImport() {
     const navigate = useNavigate();
@@ -333,3 +333,4 @@ function ScheduleImport() {
 }
 
 export default ScheduleImport;
+

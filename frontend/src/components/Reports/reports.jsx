@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Styles.css';
-import ViewList from './viewlist';
-import Sidebar from './sidebar';
-import { reportsAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import '../css/Styles.css';
+import ViewList from '../Common/viewlist';
+import Sidebar from '../Common/sidebar';
+import { reportsAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function Reports() {
   const [showViewList, setShowViewList] = useState(false);
@@ -250,3 +250,4 @@ function Reports() {
 }
 
 export default Reports;
+

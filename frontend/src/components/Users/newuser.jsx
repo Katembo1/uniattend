@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import './Users/AddNewUser.css'; // Create a CSS file for styling
-import './css/Styles.css'
+import '../css/AddNewUser.css'; // Create a CSS file for styling
+import '../css/Styles.css'
 import { Link, useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar';
-import { userAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import Sidebar from '../Common/sidebar';
+import { userAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function AddNewUser() {
   const navigate = useNavigate();
@@ -203,3 +203,4 @@ function AddNewUser() {
 }
 
 export default AddNewUser;
+

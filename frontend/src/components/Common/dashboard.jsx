@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import './css/Styles.css';
-import Sidebar from './sidebar';
-import { dashboardAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import '../css/Styles.css';
+import Sidebar from '../Common/sidebar';
+import { dashboardAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function Dashboard() {
   const [counts, setCounts] = useState({
@@ -13,6 +14,7 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const { addNotification } = useApp();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let isMounted = true;
@@ -136,7 +138,12 @@ function Dashboard() {
             <div className="card recent-activity">
               <div className="card-header">
                 <h2 className="card-title">Recent Activity</h2>
-                <button className="btn btn-outline">View All</button>
+                <button 
+                  className="btn btn-outline"
+                  onClick={() => navigate('/activities')}
+                >
+                  View All
+                </button>
               </div>
               
               <div className="activity-list">
@@ -268,3 +275,5 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+
