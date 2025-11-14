@@ -22,22 +22,32 @@ def get_current_user_id():
     return int(identity) if identity else None
 
 
-def log_action(user_id, action, entity_type=None, entity_id=None, details=None):
+def log_action(user_id, action_type, entity_type=None, entity_id=None, description=None):
     """Log user action to audit log"""
     try:
+        # Get user type if user_id is provided
+        user_type = None
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                user_type = user.user_type
+        
         log = AuditLog(
             user_id=user_id,
-            action=action,
+            user_type=user_type,
+            action_type=action_type,
             entity_type=entity_type,
             entity_id=entity_id,
-            details=details,
+            action_description=description,
             ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent')
+            user_agent=request.headers.get('User-Agent'),
+            response_status='success'
         )
         db.session.add(log)
         db.session.commit()
     except Exception as e:
         print(f"Logging error: {e}")
+        db.session.rollback()
 
 
 def paginate_query(query, page=1, per_page=20):
@@ -301,7 +311,13 @@ def create_user():
         db.session.add(user)
         db.session.commit()
         
-        log_action(current_user_id, 'create', 'user', user.user_id, {'email': user.email})
+        log_action(
+            current_user_id, 
+            'create', 
+            'user', 
+            user.user_id, 
+            f"Created new user: {user.email} ({user.user_type})"
+        )
         
         return jsonify(user.to_dict()), 201
         
@@ -338,7 +354,13 @@ def update_user(user_id):
         
         db.session.commit()
         
-        log_action(current_user_id, 'update', 'user', user.user_id)
+        log_action(
+            current_user_id, 
+            'update', 
+            'user', 
+            user.user_id,
+            f"Updated user: {user.email}"
+        )
         
         return jsonify(user.to_dict()), 200
         
@@ -354,11 +376,18 @@ def delete_user(user_id):
     try:
         current_user_id = get_current_user_id()
         user = User.query.get_or_404(user_id)
+        user_email = user.email
         
         db.session.delete(user)
         db.session.commit()
         
-        log_action(current_user_id, 'delete', 'user', user_id)
+        log_action(
+            current_user_id, 
+            'delete', 
+            'user', 
+            user_id,
+            f"Deleted user: {user_email}"
+        )
         
         return jsonify({'message': 'User deleted successfully'}), 200
         
@@ -1156,7 +1185,7 @@ def get_recent_activity():
                 'entity_id': log.entity_id,
                 'description': log.action_description,
                 'user_id': log.user_id,
-                'created_at': log.created_at.isoformat() if log.created_at else None,
+                'created_at': log.created_at.isoformat() + 'Z' if log.created_at else None,  # Add Z to indicate UTC
                 'completed': False,  # Default state for activity tracking
             }
             
@@ -1196,6 +1225,71 @@ def delete_activity(log_id):
         return jsonify({'message': 'Activity deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+
+@api_bp.route('/admin/dashboard/today-classes', methods=['GET'])
+@jwt_required()
+def get_today_classes():
+    """Get today's classes from timetable"""
+    try:
+        from datetime import datetime, date
+        
+        # Get today's day of week
+        today = date.today()
+        day_name = today.strftime('%A')  # Monday, Tuesday, etc.
+        
+        # Query timetable entries for today
+        query = TimetableEntry.query.filter(
+            TimetableEntry.day_of_week == day_name,
+            TimetableEntry.is_active == True
+        ).order_by(TimetableEntry.start_time)
+        
+        # Check effective dates if set
+        query = query.filter(
+            db.or_(
+                TimetableEntry.effective_start_date == None,
+                TimetableEntry.effective_start_date <= today
+            ),
+            db.or_(
+                TimetableEntry.effective_end_date == None,
+                TimetableEntry.effective_end_date >= today
+            )
+        )
+        
+        entries = query.all()
+        
+        classes = []
+        for entry in entries:
+            class_data = {
+                'id': entry.timetable_id,
+                'start_time': entry.start_time.strftime('%H:%M') if entry.start_time else None,
+                'end_time': entry.end_time.strftime('%H:%M') if entry.end_time else None,
+                'session_type': entry.session_type,
+                'unit_code': entry.unit.unit_code if entry.unit else 'N/A',
+                'unit_name': entry.unit.unit_name if entry.unit else 'Unknown Unit',
+                'venue_name': entry.venue.class_name if entry.venue else 'TBA',
+                'venue_location': entry.venue.location if entry.venue else '',
+                'lecturer_name': None,
+                'lecturer_title': None
+            }
+            
+            # Get lecturer name and title from Lecturer model
+            if entry.lecturer:
+                lecturer = entry.lecturer
+                # Build full name from first_name, middle_name, last_name
+                name_parts = [lecturer.first_name]
+                if lecturer.middle_name:
+                    name_parts.append(lecturer.middle_name)
+                if lecturer.last_name:
+                    name_parts.append(lecturer.last_name)
+                class_data['lecturer_name'] = ' '.join(name_parts) if name_parts else 'TBA'
+                class_data['lecturer_title'] = lecturer.title if lecturer.title else None
+            
+            classes.append(class_data)
+        
+        return jsonify({'items': classes, 'total': len(classes), 'day': day_name}), 200
+    except Exception as e:
         return jsonify({'message': str(e)}), 500
 
 
@@ -1274,18 +1368,21 @@ def create_venue():
         data = request.get_json()
         
         venue = Class(
-            name=data['name'],
-            code=data['code'],
+            class_name=data.get('class_name', data.get('name', '')),
+            class_code=data.get('class_code', data.get('code', '')),
             building=data.get('building', ''),
             floor=data.get('floor', ''),
             capacity=data.get('capacity', 0),
-            type=data.get('type', 'lecture_hall'),
-            description=data.get('description', '')
+            class_type=data.get('class_type', data.get('type', 'Lecture Hall')),
+            location_description=data.get('location_description', data.get('description', '')),
+            has_projector=data.get('has_projector', False),
+            has_computers=data.get('has_computers', False),
+            is_active=data.get('is_active', True)
         )
         db.session.add(venue)
         db.session.commit()
         
-        log_action(current_user_id, 'create', 'venue', venue.id)
+        log_action(current_user_id, 'create', 'venue', venue.class_id)
         
         return jsonify(venue.to_dict()), 201
     except Exception as e:
@@ -1302,13 +1399,27 @@ def update_venue(venue_id):
         venue = Class.query.get_or_404(venue_id)
         data = request.get_json()
         
-        venue.name = data.get('name', venue.name)
-        venue.code = data.get('code', venue.code)
-        venue.building = data.get('building', venue.building)
-        venue.floor = data.get('floor', venue.floor)
-        venue.capacity = data.get('capacity', venue.capacity)
-        venue.type = data.get('type', venue.type)
-        venue.description = data.get('description', venue.description)
+        # Update using correct field names
+        if 'class_name' in data:
+            venue.class_name = data['class_name']
+        if 'class_code' in data:
+            venue.class_code = data['class_code']
+        if 'building' in data:
+            venue.building = data['building']
+        if 'floor' in data:
+            venue.floor = data['floor']
+        if 'capacity' in data:
+            venue.capacity = data['capacity']
+        if 'class_type' in data:
+            venue.class_type = data['class_type']
+        if 'location_description' in data:
+            venue.location_description = data['location_description']
+        if 'has_projector' in data:
+            venue.has_projector = data['has_projector']
+        if 'has_computers' in data:
+            venue.has_computers = data['has_computers']
+        if 'is_active' in data:
+            venue.is_active = data['is_active']
         
         db.session.commit()
         log_action(current_user_id, 'update', 'venue', venue_id)
@@ -1327,6 +1438,13 @@ def delete_venue(venue_id):
         current_user_id = get_current_user_id()
         venue = Class.query.get_or_404(venue_id)
         
+        # First, delete all related class_beacon assignments
+        ClassBeacon.query.filter_by(class_id=venue_id).delete()
+        
+        # Delete any timetable entries for this venue
+        TimetableEntry.query.filter_by(class_id=venue_id).delete()
+        
+        # Now delete the venue
         db.session.delete(venue)
         db.session.commit()
         
@@ -1530,14 +1648,57 @@ def get_timetable():
         # Build response with relationships
         items = []
         for entry in paginated.items:
-            entry_dict = entry.to_dict()
-            # Add related objects
+            entry_dict = {
+                'timetable_id': entry.timetable_id,
+                'unit_id': entry.unit_id,
+                'lecturer_id': entry.lecturer_id,
+                'class_id': entry.class_id,
+                'academic_year': entry.academic_year,
+                'semester': entry.semester,
+                'day_of_week': entry.day_of_week,
+                'start_time': entry.start_time.strftime('%H:%M') if entry.start_time else None,
+                'end_time': entry.end_time.strftime('%H:%M') if entry.end_time else None,
+                'session_type': entry.session_type,
+                'recurrence_pattern': entry.recurrence_pattern,
+                'effective_start_date': entry.effective_start_date.isoformat() if entry.effective_start_date else None,
+                'effective_end_date': entry.effective_end_date.isoformat() if entry.effective_end_date else None,
+                'is_active': entry.is_active,
+                'created_at': entry.created_at.isoformat() + 'Z' if entry.created_at else None,
+                'updated_at': entry.updated_at.isoformat() + 'Z' if entry.updated_at else None,
+            }
+            
+            # Add related objects with safe access
             if entry.unit:
-                entry_dict['unit'] = entry.unit.to_dict()
+                entry_dict['unit'] = {
+                    'unit_id': entry.unit.unit_id,
+                    'unit_code': entry.unit.unit_code,
+                    'unit_name': entry.unit.unit_name,
+                }
+            
             if entry.lecturer:
-                entry_dict['lecturer'] = entry.lecturer.to_dict()
+                lecturer_name_parts = [entry.lecturer.first_name]
+                if entry.lecturer.middle_name:
+                    lecturer_name_parts.append(entry.lecturer.middle_name)
+                if entry.lecturer.last_name:
+                    lecturer_name_parts.append(entry.lecturer.last_name)
+                
+                entry_dict['lecturer'] = {
+                    'lecturer_id': entry.lecturer.lecturer_id,
+                    'staff_id': entry.lecturer.staff_id,
+                    'first_name': entry.lecturer.first_name,
+                    'last_name': entry.lecturer.last_name,
+                    'title': entry.lecturer.title,
+                    'name': ' '.join(lecturer_name_parts),
+                }
+            
             if entry.venue:
-                entry_dict['class'] = entry.venue.to_dict()
+                entry_dict['class'] = {
+                    'class_id': entry.venue.class_id,
+                    'class_name': entry.venue.class_name,
+                    'building': entry.venue.building,
+                    'capacity': entry.venue.capacity,
+                }
+                
             items.append(entry_dict)
         
         result = {

@@ -23,6 +23,54 @@ export const AppProvider = ({ children }) => {
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [notificationQueue, setNotificationQueue] = useState([]);
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
+  const [recentNotifications, setRecentNotifications] = useState([]); // Track recent notifications for throttling
+
+  // Process notification queue with delay
+  useEffect(() => {
+    if (notificationQueue.length > 0 && !isProcessingQueue) {
+      setIsProcessingQueue(true);
+      
+      const processNext = () => {
+        setNotificationQueue((queue) => {
+          if (queue.length === 0) {
+            setIsProcessingQueue(false);
+            return queue;
+          }
+
+          const [next, ...rest] = queue;
+          
+          // Add the notification
+          setNotifications((prev) => {
+            const updated = [...prev, next];
+            if (updated.length > 5) {
+              return updated.slice(-5);
+            }
+            return updated;
+          });
+
+          // Auto-remove based on type
+          const duration = next.type === 'error' ? 8000 : next.type === 'warning' ? 6000 : 5000;
+          setTimeout(() => {
+            removeNotification(next.id);
+          }, duration);
+
+          // Process next notification after delay
+          if (rest.length > 0) {
+            setTimeout(processNext, 500); // 500ms delay between notifications
+          } else {
+            setIsProcessingQueue(false);
+          }
+
+          return rest;
+        });
+      };
+
+      processNext();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notificationQueue.length]); // Only depend on queue length, not the full queue
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -131,17 +179,37 @@ export const AppProvider = ({ children }) => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Add notification
+  // Add notification (queued with delay)
   const addNotification = (message, type = 'info') => {
-    const id = Date.now();
+    // Prevent duplicate notifications - check if same message already exists in queue or active notifications
+    const isDuplicate = 
+      notificationQueue.some(n => n.message === message && n.type === type) ||
+      notifications.some(n => n.message === message && n.type === type);
+    
+    if (isDuplicate) {
+      return; // Don't add duplicate notification
+    }
+
+    // Throttle identical notifications within 3 seconds
+    const now = Date.now();
+    const recentMatch = recentNotifications.find(
+      n => n.message === message && n.type === type && (now - n.timestamp) < 3000
+    );
+    
+    if (recentMatch) {
+      return; // Don't add if same notification was added within last 3 seconds
+    }
+
+    const id = Date.now() + Math.random(); // Ensure unique ID
     const notification = { id, message, type };
     
-    setNotifications((prev) => [...prev, notification]);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      removeNotification(id);
-    }, 5000);
+    // Track this notification
+    setRecentNotifications(prev => [
+      ...prev.filter(n => (now - n.timestamp) < 3000), // Keep only recent ones
+      { message, type, timestamp: now }
+    ]);
+    
+    setNotificationQueue((prev) => [...prev, notification]);
   };
 
   // Remove notification

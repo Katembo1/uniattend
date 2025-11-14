@@ -59,6 +59,20 @@ function Activities() {
             
             // Remove from list
             setActivities(prev => prev.filter(a => a.id !== activityId));
+            
+            // Update total count in pagination
+            setPagination(prev => ({
+                ...prev,
+                total: Math.max(0, prev.total - 1)
+            }));
+            
+            // Remove from completed activities if it was marked as completed
+            setCompletedActivities(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(activityId);
+                return newSet;
+            });
+            
             setShowDeleteModal(false);
             setSelectedActivity(null);
         } catch (error) {
@@ -130,14 +144,35 @@ function Activities() {
         const diffMins = Math.floor(diffSecs / 60);
         const diffHours = Math.floor(diffMins / 60);
         const diffDays = Math.floor(diffHours / 24);
+        const diffWeeks = Math.floor(diffDays / 7);
+        const diffMonths = Math.floor(diffDays / 30);
+        const diffYears = Math.floor(diffDays / 365);
 
-        if (diffSecs < 60) return `${diffSecs}s ago`;
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        
-        return activityDate.toLocaleDateString();
+        if (diffSecs < 10) return 'just now';
+        if (diffSecs < 60) return `${diffSecs} seconds ago`;
+        if (diffMins === 1) return '1 minute ago';
+        if (diffMins < 60) return `${diffMins} minutes ago`;
+        if (diffHours === 1) return '1 hour ago';
+        if (diffHours < 24) return `${diffHours} hours ago`;
+        if (diffDays === 1) return 'yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffWeeks === 1) return '1 week ago';
+        if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
+        if (diffMonths === 1) return '1 month ago';
+        if (diffMonths < 12) return `${diffMonths} months ago`;
+        if (diffYears === 1) return '1 year ago';
+        return `${diffYears} years ago`;
     };
+
+    // Auto-update relative times every minute
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            // Force re-render to update relative times
+            setActivities(prev => [...prev]);
+        }, 60000); // Update every minute
+
+        return () => clearInterval(intervalId);
+    }, []);
 
     const getFilteredActivities = () => {
         let filtered = activities;
@@ -183,9 +218,6 @@ function Activities() {
                     <div className="header-stats">
                         <span className="stat-item">
                             <strong>{pagination.total}</strong> Total Activities
-                        </span>
-                        <span className="stat-item">
-                            <strong>{completedActivities.size}</strong> Completed
                         </span>
                     </div>
                 </div>
@@ -260,18 +292,8 @@ function Activities() {
                                 return (
                                     <div 
                                         key={activity.id} 
-                                        className={`activity-card ${isCompleted ? 'completed' : ''} ${getActivityColor(activity.action_type)}`}
+                                        className={`activity-card ${getActivityColor(activity.action_type)}`}
                                     >
-                                        <div className="activity-checkbox">
-                                            <input
-                                                type="checkbox"
-                                                checked={isCompleted}
-                                                onChange={() => handleCheckActivity(activity.id)}
-                                                id={`activity-${activity.id}`}
-                                            />
-                                            <label htmlFor={`activity-${activity.id}`}></label>
-                                        </div>
-
                                         <div className="activity-icon-wrapper">
                                             <div className={`activity-icon ${getActivityColor(activity.action_type)}`}>
                                                 {getActivityIcon(activity.action_type, activity.entity_type)}
@@ -294,30 +316,16 @@ function Activities() {
                                                 <span className="activity-entity">
                                                     📦 {activity.entity_type || 'Unknown'}
                                                 </span>
-                                                <span className="activity-time">
+                                                <span 
+                                                    className="activity-time"
+                                                    title={activity.created_at ? new Date(activity.created_at).toLocaleString() : 'Unknown'}
+                                                >
                                                     🕐 {formatTimeAgo(activity.created_at)}
                                                 </span>
                                             </div>
                                         </div>
 
                                         <div className="activity-actions">
-                                            {isCompleted ? (
-                                                <button
-                                                    className="action-btn undo-btn"
-                                                    onClick={() => handleUndoActivity(activity.id)}
-                                                    title="Mark as incomplete"
-                                                >
-                                                    ↶ Undo
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    className="action-btn complete-btn"
-                                                    onClick={() => handleCheckActivity(activity.id)}
-                                                    title="Mark as complete"
-                                                >
-                                                    ✓ Complete
-                                                </button>
-                                            )}
                                             <button
                                                 className="action-btn delete-btn"
                                                 onClick={() => confirmDelete(activity)}

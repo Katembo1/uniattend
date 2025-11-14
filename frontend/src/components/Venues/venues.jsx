@@ -84,14 +84,17 @@ function Venues() {
         ...venues.map(v => ({
             id: v.id || v.class_id,
             itemType: 'Venue',
-            name: v.name || v.code || 'Unknown',
-            type: v.type || 'lecture_hall',
+            name: v.class_name || v.name || v.code || 'Unknown',
+            type: v.class_type || v.type || 'Lecture Hall',
             building: v.building || '-',
             floor: v.floor || '-',
             capacity: v.capacity || '-',
-            status: 'Active',
-            description: v.description || '',
-            code: v.code || ''
+            status: v.is_active ? 'Active' : 'Inactive',
+            description: v.location_description || v.description || '',
+            code: v.class_code || v.code || v.class_name || '',
+            has_projector: v.has_projector,
+            has_computers: v.has_computers,
+            is_active: v.is_active
         })),
         ...beacons.map(b => ({
             id: b.beacon_id,
@@ -162,7 +165,17 @@ function Venues() {
         
         try {
             if (selectedItem.itemType === 'Venue') {
-                await classAPI.update(selectedItem.id, editFormData);
+                // Map frontend field names to backend field names
+                const venueData = {
+                    class_name: editFormData.name,
+                    class_code: editFormData.code,
+                    building: editFormData.building,
+                    floor: editFormData.floor,
+                    capacity: editFormData.capacity,
+                    class_type: editFormData.type,
+                    location_description: editFormData.description
+                };
+                await classAPI.update(selectedItem.id, venueData);
                 addNotification('Venue updated successfully', 'success');
             } else {
                 await beaconAPI.update(selectedItem.id, editFormData);
@@ -221,11 +234,39 @@ function Venues() {
                 
                 <div className="page-header">
                     <h1 className="page-title">Venues & Beacons</h1>
-                    <div className="header-actions">
-                        <Link to="/add_venue" className="btn btn-primary">
+                    <div className="header-actions" style={{ display: 'flex', gap: '12px' }}>
+                        <Link 
+                            to="/add_venue" 
+                            className="btn btn-primary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                textDecoration: 'none',
+                                borderRadius: '8px',
+                                fontWeight: '500',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            <span style={{ fontSize: '18px' }}>🏛️</span>
                             Add New Venue
                         </Link>
-                        <Link to="/add_beacon" className="btn btn-success">
+                        <Link 
+                            to="/add_beacon" 
+                            className="btn btn-success"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                textDecoration: 'none',
+                                borderRadius: '8px',
+                                fontWeight: '500',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            <span style={{ fontSize: '18px' }}>📡</span>
                             Add New Beacon
                         </Link>
                     </div>

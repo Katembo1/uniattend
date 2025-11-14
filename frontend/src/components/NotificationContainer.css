@@ -7,13 +7,17 @@
   flex-direction: column;
   gap: 10px;
   max-width: 400px;
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
 }
 
 .notification {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px;
+  padding-bottom: 18px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -21,6 +25,12 @@
   animation: slideIn 0.3s ease-out;
   min-width: 300px;
   border-left: 4px solid;
+  overflow: hidden;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.notification:hover {
+  transform: translateX(-5px);
 }
 
 @keyframes slideIn {
@@ -51,6 +61,7 @@
   font-size: 14px;
   color: #333;
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .notification-close {
@@ -67,10 +78,22 @@
   justify-content: center;
   flex-shrink: 0;
   transition: color 0.2s;
+  z-index: 1;
 }
 
 .notification-close:hover {
   color: #333;
+}
+
+/* Progress bar */
+.notification-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: currentColor;
+  transition: width 0.05s linear;
+  opacity: 0.5;
 }
 
 /* Success notification */
@@ -83,6 +106,10 @@
   color: #28a745;
 }
 
+.notification-success .notification-progress {
+  background: #28a745;
+}
+
 /* Error notification */
 .notification-error {
   border-left-color: #dc3545;
@@ -91,6 +118,10 @@
 .notification-error .notification-icon {
   background-color: #f8d7da;
   color: #dc3545;
+}
+
+.notification-error .notification-progress {
+  background: #dc3545;
 }
 
 /* Warning notification */
@@ -103,6 +134,10 @@
   color: #856404;
 }
 
+.notification-warning .notification-progress {
+  background: #ffc107;
+}
+
 /* Info notification */
 .notification-info {
   border-left-color: #17a2b8;
@@ -111,6 +146,26 @@
 .notification-info .notification-icon {
   background-color: #d1ecf1;
   color: #17a2b8;
+}
+
+.notification-info .notification-progress {
+  background: #17a2b8;
+}
+
+/* Fade out animation */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+}
+
+.notification.removing {
+  animation: fadeOut 0.3s ease-out forwards;
 }
 
 /* Mobile responsive */

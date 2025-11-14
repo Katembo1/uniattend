@@ -1,23 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../css/Styles.css';
 import Sidebar from '../Common/sidebar';
+import { timetableAPI, institutionAPI, lecturerAPI, classAPI } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 function AddNewClass() {
   const navigate = useNavigate();
+  const { addNotification } = useApp();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    className: '',
-    courseCode: '',
-    lecturer: '',
-    venue: '',
+    unitId: '',
+    lecturerId: '',
+    classId: '',
     day: 'Monday',
     startTime: '',
     endTime: '',
-    capacity: ''
+    sessionType: 'Lecture'
   });
 
+  // Dropdown options
+  const [units, setUnits] = useState([]);
+  const [lecturers, setLecturers] = useState([]);
+  const [venues, setVenues] = useState([]);
+
   const [formErrors, setFormErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
+  const fetchDropdownData = async () => {
+    try {
+      const [unitsRes, lecturersRes, venuesRes] = await Promise.all([
+        institutionAPI.units.getAll(),
+        lecturerAPI.getAll(),
+        classAPI.getAll()
+      ]);
+      
+      setUnits(unitsRes.data.items || unitsRes.data || []);
+      setLecturers(lecturersRes.data.items || lecturersRes.data || []);
+      setVenues(venuesRes.data.items || venuesRes.data || []);
+    } catch (error) {
+      console.error('Error fetching dropdown data:', error);
+      addNotification('Failed to load form options', 'error');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,46 +53,66 @@ function AddNewClass() {
       ...prev,
       [name]: value
     }));
+    // Clear error for this field
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(formData);
     setFormErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      console.log('Class data submitted:', formData);
-      setSuccessMessage('Class added successfully!');
-      setFormData({
-        className: '',
-        courseCode: '',
-        lecturer: '',
-        venue: '',
-        day: 'Monday',
-        startTime: '',
-        endTime: '',
-        capacity: ''
-      });
-      setTimeout(() => {
-        setSuccessMessage('');
-        navigate('/scheduling'); // Redirect to scheduling page after success
-      }, 2000);
+      setLoading(true);
+      try {
+        const payload = {
+          unit_id: parseInt(formData.unitId),
+          lecturer_id: parseInt(formData.lecturerId),
+          class_id: parseInt(formData.classId),
+          day_of_week: formData.day,
+          start_time: formData.startTime,
+          end_time: formData.endTime,
+          session_type: formData.sessionType
+        };
+        
+        await timetableAPI.create(payload);
+        addNotification('Class schedule added successfully!', 'success');
+        
+        // Reset form
+        setFormData({
+          unitId: '',
+          lecturerId: '',
+          classId: '',
+          day: 'Monday',
+          startTime: '',
+          endTime: '',
+          sessionType: 'Lecture'
+        });
+        
+        setTimeout(() => {
+          navigate('/scheduling');
+        }, 1500);
+      } catch (error) {
+        console.error('Error adding class schedule:', error);
+        addNotification(error.response?.data?.message || 'Failed to add class schedule', 'error');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   const validateForm = (data) => {
     const errors = {};
-    if (!data.className.trim()) errors.className = 'Class name is required';
-    if (!data.courseCode.trim()) errors.courseCode = 'Course code is required';
-    if (!data.lecturer.trim()) errors.lecturer = 'Lecturer is required';
-    if (!data.venue.trim()) errors.venue = 'Venue is required';
+    if (!data.unitId) errors.unitId = 'Course/Unit is required';
+    if (!data.lecturerId) errors.lecturerId = 'Lecturer is required';
+    if (!data.classId) errors.classId = 'Venue is required';
     if (!data.startTime) errors.startTime = 'Start time is required';
     if (!data.endTime) errors.endTime = 'End time is required';
     if (data.startTime && data.endTime && data.startTime >= data.endTime) {
       errors.endTime = 'End time must be after start time';
     }
-    if (!data.capacity) errors.capacity = 'Capacity is required';
-    else if (isNaN(data.capacity) || data.capacity < 1) errors.capacity = 'Capacity must be a positive number';
     return errors;
   };
 
@@ -84,67 +132,86 @@ function AddNewClass() {
 
         <div className="card">
           <div className="card-header">
-            <h2>Add New Class</h2>
+            <h2>Add New Class Schedule</h2>
           </div>
           <div className="card-body">
-            {successMessage && <div className="alert alert-success">{successMessage}</div>}
-            
             <form onSubmit={handleSubmit} className="user-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label>Class Name</label>
-                  <input
-                    type="text"
-                    name="className"
-                    value={formData.className}
+                  <label>Course/Unit *</label>
+                  <select
+                    name="unitId"
+                    value={formData.unitId}
                     onChange={handleChange}
-                    className={formErrors.className ? 'input-error' : ''}
-                  />
-                  {formErrors.className && <div className="error-message">{formErrors.className}</div>}
+                    className={formErrors.unitId ? 'input-error role-select' : 'role-select'}
+                  >
+                    <option value="">Select Course</option>
+                    {units.map(unit => (
+                      <option key={unit.unit_id} value={unit.unit_id}>
+                        {unit.unit_code} - {unit.unit_name}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.unitId && <div className="error-message">{formErrors.unitId}</div>}
                 </div>
 
                 <div className="form-group">
-                  <label>Course Code</label>
-                  <input
-                    type="text"
-                    name="courseCode"
-                    value={formData.courseCode}
+                  <label>Lecturer *</label>
+                  <select
+                    name="lecturerId"
+                    value={formData.lecturerId}
                     onChange={handleChange}
-                    className={formErrors.courseCode ? 'input-error' : ''}
-                  />
-                  {formErrors.courseCode && <div className="error-message">{formErrors.courseCode}</div>}
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Lecturer</label>
-                  <input
-                    type="text"
-                    name="lecturer"
-                    value={formData.lecturer}
-                    onChange={handleChange}
-                    className={formErrors.lecturer ? 'input-error' : ''}
-                  />
-                  {formErrors.lecturer && <div className="error-message">{formErrors.lecturer}</div>}
-                </div>
-
-                <div className="form-group">
-                  <label>Venue</label>
-                  <input
-                    type="text"
-                    name="venue"
-                    value={formData.venue}
-                    onChange={handleChange}
-                    className={formErrors.venue ? 'input-error' : ''}
-                  />
-                  {formErrors.venue && <div className="error-message">{formErrors.venue}</div>}
+                    className={formErrors.lecturerId ? 'input-error role-select' : 'role-select'}
+                  >
+                    <option value="">Select Lecturer</option>
+                    {lecturers.map(lecturer => (
+                      <option key={lecturer.lecturer_id} value={lecturer.lecturer_id}>
+                        {lecturer.title} {lecturer.first_name} {lecturer.last_name}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.lecturerId && <div className="error-message">{formErrors.lecturerId}</div>}
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Day</label>
+                  <label>Venue *</label>
+                  <select
+                    name="classId"
+                    value={formData.classId}
+                    onChange={handleChange}
+                    className={formErrors.classId ? 'input-error role-select' : 'role-select'}
+                  >
+                    <option value="">Select Venue</option>
+                    {venues.map(venue => (
+                      <option key={venue.class_id} value={venue.class_id}>
+                        {venue.class_name} - {venue.building} ({venue.capacity} capacity)
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.classId && <div className="error-message">{formErrors.classId}</div>}
+                </div>
+
+                <div className="form-group">
+                  <label>Session Type</label>
+                  <select 
+                    name="sessionType" 
+                    value={formData.sessionType} 
+                    onChange={handleChange}
+                    className="role-select"
+                  >
+                    <option value="Lecture">Lecture</option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Lab">Lab</option>
+                    <option value="Seminar">Seminar</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Day *</label>
                   <select 
                     name="day" 
                     value={formData.day} 
@@ -157,11 +224,12 @@ function AddNewClass() {
                     <option value="Thursday">Thursday</option>
                     <option value="Friday">Friday</option>
                     <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Start Time</label>
+                  <label>Start Time *</label>
                   <input
                     type="time"
                     name="startTime"
@@ -171,9 +239,11 @@ function AddNewClass() {
                   />
                   {formErrors.startTime && <div className="error-message">{formErrors.startTime}</div>}
                 </div>
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
-                  <label>End Time</label>
+                  <label>End Time *</label>
                   <input
                     type="time"
                     name="endTime"
@@ -183,27 +253,18 @@ function AddNewClass() {
                   />
                   {formErrors.endTime && <div className="error-message">{formErrors.endTime}</div>}
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>Capacity</label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  min="1"
-                  className={formErrors.capacity ? 'input-error' : ''}
-                />
-                {formErrors.capacity && <div className="error-message">{formErrors.capacity}</div>}
+                <div className="form-group">
+                  {/* Empty for layout symmetry */}
+                </div>
               </div>
 
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => navigate('/scheduling')}>
+                <button type="button" className="btn-secondary" onClick={() => navigate('/scheduling')} disabled={loading}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Add Class
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Adding Schedule...' : 'Add Schedule'}
                 </button>
               </div>
             </form>

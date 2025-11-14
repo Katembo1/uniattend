@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, time
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -16,11 +16,13 @@ class BaseModel(db.Model):
         result = {}
         for column in self.__table__.columns:
             value = getattr(self, column.name)
-            # Convert datetime and date objects to ISO format strings
+            # Convert datetime, date, and time objects to ISO format strings
             if isinstance(value, datetime):
                 result[column.name] = value.isoformat()
             elif isinstance(value, date):
                 result[column.name] = value.isoformat()
+            elif isinstance(value, time):
+                result[column.name] = value.strftime('%H:%M:%S')
             else:
                 result[column.name] = value
         return result

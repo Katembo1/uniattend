@@ -19,6 +19,8 @@ import ViewList from './components/Common/viewlist';
 import AdminProfile from "./components/Auth/AdminProfile";
 import UserManagement from "./components/Users/UserManagement";
 import Activities from "./components/Common/activities";
+import Schedules from "./components/Scheduling/schedules";
+import Classes from "./components/Venues/classes";
 import NotificationContainer from './components/Common/NotificationContainer';
 import './App.css';
 
@@ -74,6 +76,8 @@ function AppContent() {
               <Route path="/viewlist" element={<ViewList />} />
               <Route path="/admin-profile" element={<AdminProfile />} />
               <Route path="/activities" element={<Activities />} />
+              <Route path="/schedules" element={<Schedules />} />
+              <Route path="/classes" element={<Classes />} />
             </Routes>
           </main>
         </div>

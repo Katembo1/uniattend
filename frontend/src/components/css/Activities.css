@@ -363,14 +363,18 @@
 }
 
 .action-btn {
-    padding: 0.5rem 1rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid #dee2e6;
     border-radius: 6px;
     background: white;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 1.2rem;
     transition: all 0.2s;
-    white-space: nowrap;
+    padding: 0;
 }
 
 .action-btn:hover {
@@ -381,6 +385,7 @@
 .complete-btn {
     color: #28a745;
     border-color: #28a745;
+    font-weight: bold;
 }
 
 .complete-btn:hover {
@@ -391,6 +396,7 @@
 .undo-btn {
     color: #ffc107;
     border-color: #ffc107;
+    font-size: 1.4rem;
 }
 
 .undo-btn:hover {
@@ -401,6 +407,7 @@
 .delete-btn {
     color: #dc3545;
     border-color: #dc3545;
+    font-size: 1.1rem;
 }
 
 .delete-btn:hover {
@@ -554,6 +561,13 @@
         order: 4;
         width: 100%;
         justify-content: flex-end;
+        margin-top: 0.5rem;
+    }
+
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.3rem;
     }
 
     .activity-meta {

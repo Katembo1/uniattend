@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import '../css/Styles.css';
 import Sidebar from '../Common/sidebar';
 import { userAPI } from '../../services/api';
@@ -15,6 +15,7 @@ function Users() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const { addNotification } = useApp();
+    const location = useLocation();
     const MAX_RETRIES = 3;
 
     const fetchUsers = useCallback(async (isRetry = false) => {
@@ -105,6 +106,15 @@ function Users() {
         fetchUsers();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeFilter, pagination.page]); // Intentionally limited dependencies
+    
+    // Refetch when location changes (e.g., returning from add-user page)
+    useEffect(() => {
+        // Check if we're coming back to this page
+        if (location.pathname === '/users') {
+            fetchUsers();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname]);
 
     const handleFilterClick = (filter) => {
         setActiveFilter(filter);
@@ -163,8 +173,10 @@ function Users() {
     const filteredUsers = users.filter(user => {
         const searchLower = searchTerm.toLowerCase();
         return (
+            user.name?.toLowerCase().includes(searchLower) ||
             user.first_name?.toLowerCase().includes(searchLower) ||
             user.last_name?.toLowerCase().includes(searchLower) ||
+            user.username?.toLowerCase().includes(searchLower) ||
             user.email?.toLowerCase().includes(searchLower)
         );
     });
@@ -189,12 +201,20 @@ function Users() {
                                 {filter}
                             </button>
                         ))}
+                        <button
+                            className="filter-button refresh-button"
+                            onClick={() => fetchUsers()}
+                            disabled={loading}
+                            title="Refresh user list"
+                        >
+                            🔄 Refresh
+                        </button>
                     </div>
 
                     <div className="search-bar">
                         <input 
                             type="text" 
-                            placeholder="Search users..." 
+                            placeholder="Search by name, username, or email..." 
                             value={searchTerm} 
                             onChange={handleSearchChange} 
                         />

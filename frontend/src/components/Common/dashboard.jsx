@@ -12,7 +12,11 @@ function Dashboard() {
     venues: 0,
     classes: 0
   });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [todayClasses, setTodayClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [classesLoading, setClassesLoading] = useState(true);
   const { addNotification } = useApp();
   const navigate = useNavigate();
 
@@ -57,8 +61,12 @@ function Dashboard() {
         clearTimeout(timeoutId);
         console.error('Error fetching dashboard stats:', error);
         
-        const errorMsg = error.response?.data?.message || error.message || 'Failed to load dashboard statistics';
-        addNotification(errorMsg, 'error');
+        // Only show notification for critical network errors, not for every failed request
+        if (!error.response && error.message === 'Network Error') {
+          // Network is down - show a single notification
+          addNotification('Unable to connect to server. Please check your connection.', 'error');
+        }
+        
         setLoading(false);
         
         // Show zero counts on error
@@ -106,6 +114,83 @@ function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addNotification]);
 
+  // Fetch recent activities
+  useEffect(() => {
+    const fetchRecentActivities = async () => {
+      try {
+        setActivitiesLoading(true);
+        const response = await dashboardAPI.getRecentActivity({ per_page: 5 });
+        setRecentActivities(response.data.items || []);
+      } catch (error) {
+        console.error('Error fetching recent activities:', error);
+        // Silently fail - activities are not critical
+      } finally {
+        setActivitiesLoading(false);
+      }
+    };
+
+    fetchRecentActivities();
+  }, []);
+
+  // Fetch today's classes
+  useEffect(() => {
+    const fetchTodayClasses = async () => {
+      try {
+        setClassesLoading(true);
+        const response = await dashboardAPI.getTodayClasses();
+        setTodayClasses(response.data.items || []);
+      } catch (error) {
+        console.error('Error fetching today\'s classes:', error);
+        // Silently fail - classes are not critical
+      } finally {
+        setClassesLoading(false);
+      }
+    };
+
+    fetchTodayClasses();
+  }, []);
+
+  const getActivityIcon = (actionType, entityType) => {
+    if (actionType === 'create') {
+      if (entityType === 'user' || entityType === 'student' || entityType === 'lecturer') return '👤';
+      if (entityType === 'venue' || entityType === 'class') return '🏛️';
+      if (entityType === 'beacon') return '📡';
+      if (entityType === 'timetable') return '📅';
+      return '➕';
+    }
+    if (actionType === 'update') return '✏️';
+    if (actionType === 'delete') return '🗑️';
+    if (actionType === 'login') return '🔐';
+    if (actionType === 'logout') return '🚪';
+    return '📝';
+  };
+
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return 'Unknown time';
+    
+    const now = new Date();
+    // Handle ISO format timestamps and ensure proper parsing
+    const activityDate = new Date(timestamp);
+    
+    // Check if date is valid
+    if (isNaN(activityDate.getTime())) {
+      console.error('Invalid timestamp:', timestamp);
+      return 'Invalid time';
+    }
+    
+    const diffMs = now - activityDate;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+
+    if (diffSecs < 10) return 'just now';
+    if (diffSecs < 60) return `${diffSecs}s ago`;
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    
+    return activityDate.toLocaleDateString();
+  };
+
   return (
     <div className="dashboard-container">
    
@@ -147,125 +232,107 @@ function Dashboard() {
               </div>
               
               <div className="activity-list">
-                <div className="activity-item">
-                  <div className="activity-icon user">👤</div>
-                  <div className="activity-details">
-                    <p className="activity-title">John Smith registered</p>
-                    <p className="activity-subtext">Student</p>
+                {activitiesLoading ? (
+                  <div className="loading" style={{ padding: '2rem', textAlign: 'center' }}>
+                    Loading activities...
                   </div>
-                  <div className="activity-time">2m ago</div>
-                </div>
-                
-                <div className="activity-item">
-                  <div className="activity-icon attendance">📊</div>
-                  <div className="activity-details">
-                    <p className="activity-title">CS101 Attendance Updated</p>
-                    <p className="activity-subtext">45/50 Students Present</p>
+                ) : recentActivities.length === 0 ? (
+                  <div className="empty-state" style={{ padding: '2rem', textAlign: 'center', color: '#6c757d' }}>
+                    <p>No recent activities</p>
+                    <p style={{ fontSize: '0.9rem' }}>Activities will appear here as users interact with the system</p>
                   </div>
-                  <div className="activity-time">15m ago</div>
-                </div>
-                
-                <div className="activity-item">
-                  <div className="activity-icon warning">⚠️</div>
-                  <div className="activity-details">
-                    <p className="activity-title">A Beacon Offline</p>
-                    <p className="activity-subtext">Engineering Block B</p>
-                  </div>
-                  <div className="activity-time">32m ago</div>
-                </div>
-                
-                <div className="activity-item">
-                  <div className="activity-icon schedule">📅</div>
-                  <div className="activity-details">
-                    <p className="activity-title">New Class Scheduled</p>
-                    <p className="activity-subtext">MATH202</p>
-                  </div>
-                  <div className="activity-time">1h ago</div>
-                </div>
-                
-                <div className="activity-item">
-                  <div className="activity-icon add">➕</div>
-                  <div className="activity-details">
-                    <p className="activity-title">New Lecturer Added</p>
-                    <p className="activity-subtext">Dr. Sarah Johnson</p>
-                  </div>
-                  <div className="activity-time">2h ago</div>
-                </div>
+                ) : (
+                  recentActivities.map((activity) => (
+                    <div key={activity.id} className="activity-item">
+                      <div className={`activity-icon ${activity.action_type}`}>
+                        {getActivityIcon(activity.action_type, activity.entity_type)}
+                      </div>
+                      <div className="activity-details">
+                        <p className="activity-title">
+                          {activity.description || `${activity.action_type} ${activity.entity_type}`}
+                        </p>
+                        <p className="activity-subtext">
+                          {activity.username || 'System'} • {activity.entity_type || 'Unknown'}
+                        </p>
+                      </div>
+                      <div className="activity-time">{formatTimeAgo(activity.created_at)}</div>
+                    </div>
+                  ))
+                )}
               </div>
-              </div>
+            </div>
 
             <div className="card today-classes">
               <div className="card-header">
                 <h2 className="card-title">Today's Classes</h2>
-                <button className="btn btn-outline">View Schedule</button>
-                  </div>
+                <button 
+                  className="btn btn-outline"
+                  onClick={() => navigate('/schedules')}
+                >
+                  View Schedule
+                </button>
+              </div>
               
               <div className="class-list">
-                <div className="class-item">
-                  <div className="class-details">
-                    <h3 className="class-title">CS101: Introduction to Programming</h3>
-                    <p className="class-meta">
-                      <span className="class-time">09:00 - 11:00</span>
-                      <span className="class-location">Lecture Hall A</span>
-                      <span className="class-lecturer">Dr. Johnson</span>
-                    </p>
+                {classesLoading ? (
+                  <div className="loading" style={{ padding: '2rem', textAlign: 'center' }}>
+                    Loading today's classes...
                   </div>
-                  <div className="class-actions">
-                    <button className="action-btn" title="View Details">
-                      <span role="img" aria-label="View">👁️</span>
-                    </button>
+                ) : todayClasses.length === 0 ? (
+                  <div className="empty-state" style={{ padding: '2rem', textAlign: 'center', color: '#6c757d' }}>
+                    <p>No classes scheduled for today</p>
+                    <p style={{ fontSize: '0.9rem' }}>Check back tomorrow or view the full schedule</p>
                   </div>
-                </div>
-                
-                <div className="class-item">
-                  <div className="class-details">
-                    <h3 className="class-title">BIO205: Molecular Biology</h3>
-                    <p className="class-meta">
-                      <span className="class-time">11:30 - 13:30</span>
-                      <span className="class-location">Lab 3</span>
-                      <span className="class-lecturer">Prof. Williams</span>
-                    </p>
-                  </div>
-                  <div className="class-actions">
-                    <button className="action-btn" title="View Details">
-                      <span role="img" aria-label="View">👁️</span>
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="class-item">
-                  <div className="class-details">
-                    <h3 className="class-title">MATH202: Calculus II</h3>
-                    <p className="class-meta">
-                      <span className="class-time">14:00 - 16:00</span>
-                      <span className="class-location">Lecture Hall C</span>
-                      <span className="class-lecturer">Dr. Martinez</span>
-                    </p>
-                  </div>
-                  <div className="class-actions">
-                    <button className="action-btn" title="View Details">
-                      <span role="img" aria-label="View">👁️</span>
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="class-item">
-                  <div className="class-details">
-                    <h3 className="class-title">ENG304: Advanced Writing</h3>
-                    <p className="class-meta">
-                      <span className="class-time">16:30 - 18:30</span>
-                      <span className="class-location">Room 201</span>
-                      <span className="class-lecturer">Prof. Thompson</span>
-                    </p>
-                  </div>
-                  <div className="class-actions">
-                    <button className="action-btn" title="View Details">
-                      <span role="img" aria-label="View">👁️</span>
-                    </button>
-                  </div>
-                </div>
+                ) : (
+                  todayClasses.slice(0, 4).map((classItem) => (
+                    <div key={classItem.id} className="class-item">
+                      <div className="class-details">
+                        <h3 className="class-title">
+                          {classItem.unit_code}: {classItem.unit_name}
+                        </h3>
+                        <p className="class-meta">
+                          <span className="class-time">
+                            🕐 {classItem.start_time} - {classItem.end_time}
+                          </span>
+                          <span className="class-location">
+                            🏛️ {classItem.venue_name}
+                          </span>
+                          <span className="class-lecturer">
+                            👨‍🏫 {classItem.lecturer_title ? `${classItem.lecturer_title} ` : ''}{classItem.lecturer_name || 'TBA'}
+                          </span>
+                        </p>
+                      </div>
+                      {classItem.session_type && (
+                        <div className="class-badge">
+                          {classItem.session_type}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
-              <button style={{ float: 'right' }}>View All Classes</button>
+              
+              {!classesLoading && (
+                <div style={{ 
+                  marginTop: '1.5rem', 
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #e0e0e0',
+                  textAlign: 'center'
+                }}>
+                  <button 
+                    className="btn btn-outline"
+                    onClick={() => navigate('/classes')}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      fontSize: '1rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    📋 View All Classes
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}

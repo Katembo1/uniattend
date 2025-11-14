@@ -45,7 +45,10 @@ apiClient.interceptors.response.use(
       headers: error.response?.headers
     });
     
-    if (error.response?.status === 401) {
+    // Only handle 401 if it's NOT a login request
+    const isLoginRequest = error.config?.url?.includes('/login');
+    
+    if (error.response?.status === 401 && !isLoginRequest) {
       // Unauthorized - clear token and redirect to login
       console.warn('⚠ 401 Unauthorized - Token invalid or expired');
       
@@ -66,15 +69,8 @@ apiClient.interceptors.response.use(
         // Force a full page reload to reset all state
         window.location.replace('/login');
       }
-    } else if (error.response?.status === 422) {
-      // Unprocessable Entity - validation error
-      console.error('Validation Error 422:', error.response.data);
-      
-      const errorMsg = error.response?.data?.message || 'Invalid token - please login again';
-      if (window.showNotification) {
-        window.showNotification(errorMsg, 'error');
-      }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -255,6 +251,7 @@ export const dashboardAPI = {
   getStats: () => apiClient.get('/admin/dashboard/stats'),
   getRecentActivity: (params) => apiClient.get('/admin/dashboard/recent-activity', { params }),
   deleteActivity: (logId) => apiClient.delete(`/admin/dashboard/activity/${logId}`),
+  getTodayClasses: () => apiClient.get('/admin/dashboard/today-classes'),
 };
 
 // ==================== PROFILE ====================

@@ -815,13 +815,14 @@ a {
 .scheduling-container {
   display: flex;
   min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
 /* Content Area Adjustments */
 .scheduling-content {
   flex: 1;
-  margin-left: 0; /* Remove margin since parent app-content already has it */
-  padding: 20px;
+  margin-left: 0;
+  padding: 30px;
   min-height: 100vh;
   max-width: calc(100vw - 250px);
   overflow-x: hidden;
@@ -832,93 +833,116 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .scheduling-title {
-  font-size: 1.8rem;
-  color: var(--secondary-color);
+  font-size: 2rem;
+  color: #2c3e50;
   margin: 0;
+  font-weight: 700;
 }
 
 .scheduling-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+}
+
+.scheduling-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 /* Filter Tabs - Enhanced version */
 .scheduling-filters {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 25px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--light-border);
+  padding: 5px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .scheduling-filter {
-  padding: 8px 16px;
-  border-radius: 6px;
-  background-color: var(--light-bg);
-  border: 1px solid var(--light-border);
+  padding: 10px 20px;
+  border-radius: 8px;
+  background-color: transparent;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  color: #6c757d;
 }
 
 .scheduling-filter.active {
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
 }
 
 .scheduling-filter:not(.active):hover {
-  background-color: #e9ecef;
+  background-color: #f8f9fa;
+  color: #495057;
+  transform: translateY(-1px);
 }
 
 /* Enhanced Search Bar */
 .scheduling-search {
   display: flex;
   margin-bottom: 25px;
-  max-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .scheduling-search input {
   flex: 1;
-  padding: 10px 15px;
-  border: 1px solid var(--light-border);
-  border-radius: 6px 0 0 6px;
-  font-size: 0.9rem;
+  padding: 12px 18px;
+  border: none;
+  font-size: 0.95rem;
   transition: all 0.2s;
+  background-color: white;
 }
 
 .scheduling-search input:focus {
-  border-color: var(--primary-color);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  background-color: #fff;
 }
 
 .scheduling-search button {
-  padding: 10px 15px;
-  background-color: var(--primary-color);
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 0 6px 6px 0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
 }
 
 .scheduling-search button:hover {
-  background-color: var(--primary-hover);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* Table Enhancements */
 .scheduling-table-container {
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  padding: 20px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 0;
   margin-bottom: 30px;
+  overflow: hidden;
 }
 
 .scheduling-table {
@@ -927,20 +951,22 @@ a {
 }
 
 .scheduling-table th {
-  background-color: var(--light-bg);
-  color: var(--text-light);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  padding: 12px 15px;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 16px 20px;
   text-align: left;
 }
 
 .scheduling-table td {
-  padding: 15px;
-  border-bottom: 1px solid var(--light-border);
+  padding: 18px 20px;
+  border-bottom: 1px solid #e9ecef;
   vertical-align: middle;
+  font-size: 0.95rem;
+  color: #495057;
 }
 
 .scheduling-table tr:last-child td {
@@ -948,41 +974,45 @@ a {
 }
 
 .scheduling-table tr:hover {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
 }
 
 /* Action Buttons */
 .table-actions {
   display: flex;
   gap: 8px;
+  justify-content: center;
 }
 
 .action-btn {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-light);
-  font-size: 1.1rem;
-  transition: color 0.2s;
-  width: 32px;
-  height: 32px;
+  color: #6c757d;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .action-btn:hover {
-  color: var(--primary-color);
-  background-color: rgba(52, 152, 219, 0.1);
+  color: #667eea;
+  background-color: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
 }
 
 /* Status Badges */
 .status-badge {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
+  display: inline-block;
 }
 
 .status-active {
@@ -995,11 +1025,22 @@ a {
   color: #721c24;
 }
 
+/* Day Badge */
+.day-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .scheduling-content {
     margin-left: 0;
-    padding-top: 20px;
+    padding: 15px;
   }
   
   .scheduling-header {
@@ -1014,6 +1055,7 @@ a {
   }
   
   .scheduling-filters {
+    flex-wrap: wrap;
     overflow-x: auto;
     padding-bottom: 15px;
   }
@@ -1022,9 +1064,9 @@ a {
     font-size: 0.85rem;
   }
   
-  .scheduling-table th, 
+  .scheduling-table th,
   .scheduling-table td {
-    padding: 10px 8px;
+    padding: 10px 12px;
   }
 }
 
@@ -1255,6 +1297,55 @@ a {
   background-color: white;
   color: var(--primary-color);
   box-shadow: var(--shadow);
+}
+
+/* Filter buttons (alternative style) */
+.filter-button {
+  padding: 8px 16px;
+  border: 2px solid var(--light-border);
+  background: white;
+  color: var(--text-color);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.filter-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.filter-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  margin-left: auto;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background-color: #e9ecef;
+  border-color: var(--primary-color);
+}
+
+.refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Responsive adjustments */
@@ -1543,6 +1634,17 @@ a {
 
 .class-actions {
   margin-left: 15px;
+}
+
+.class-badge {
+  padding: 0.4rem 0.8rem;
+  background: #e7f3ff;
+  color: #007bff;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* Responsive adjustments */

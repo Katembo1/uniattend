@@ -61,14 +61,14 @@ function Login() {
           navigate('/dashboard');
         }, 100);
       } else {
+        // Error notification already handled by AppContext.login
         const errorMsg = result?.error || 'Invalid email or password';
         setErrors({ general: errorMsg });
-        addNotification(errorMsg, 'error');
       }
     } catch (error) {
       console.error('Login error:', error);
+      // Error notification already handled by AppContext.login or API interceptor
       const errorMsg = error.response?.data?.message || 'Invalid email or password';
-      addNotification(errorMsg, 'error');
       setErrors({ general: errorMsg });
     } finally {
       setLoading(false);

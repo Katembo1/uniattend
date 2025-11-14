@@ -71,22 +71,14 @@ function Scheduling() {
         
         if (isRetry && retryCount >= MAX_RETRIES) {
             addNotification('Maximum retry attempts reached', 'error');
+            setClasses([]);
             return;
         }
         
         setLoading(true);
-        const timeoutId = setTimeout(() => {
-            console.error('Schedule fetch timeout');
-            setLoading(false);
-            if (retryCount < MAX_RETRIES) {
-                addNotification('Request timeout - retrying...', 'warning');
-                setRetryCount(prev => prev + 1);
-            }
-        }, 8000);
 
         try {
             const response = await timetableAPI.getAll();
-            clearTimeout(timeoutId);
             
             console.log('Schedule API response:', response.data);
             
@@ -123,24 +115,18 @@ function Scheduling() {
             setClasses(scheduleData);
             setRetryCount(0);
             
-            if (scheduleData.length === 0) {
-                addNotification('No schedule entries found', 'info');
-            }
         } catch (error) {
-            clearTimeout(timeoutId);
             console.error('Error fetching schedule:', error);
             console.error('Error details:', error.response?.data);
             
-            if (retryCount < MAX_RETRIES) {
-                addNotification(`Failed to load schedule - Retry ${retryCount + 1}/${MAX_RETRIES}`, 'warning');
-                setRetryCount(prev => prev + 1);
-                setTimeout(() => fetchSchedule(true), 2000);
-            } else {
+            // Only show notification for actual errors, not timeouts during retry
+            if (!isRetry || retryCount >= MAX_RETRIES - 1) {
                 const errorMsg = error.response?.data?.message || error.message || 'Failed to load schedule';
                 addNotification(errorMsg, 'error');
-                // Set empty array on final failure
-                setClasses([]);
             }
+            
+            // Set empty array on error
+            setClasses([]);
         } finally {
             setLoading(false);
         }
@@ -223,11 +209,30 @@ function Scheduling() {
         }
     };
 
-    const filteredClasses = classes.filter((cls) =>
-        Object.values(cls).some((value) =>
-            value.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    );
+    const filteredClasses = classes.filter((cls) => {
+        // First filter by search term
+        const matchesSearch = Object.values(cls).some((value) =>
+            value && typeof value === 'string' && value.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
+        if (!matchesSearch) return false;
+        
+        // Then filter by active tab
+        if (activeTab === 'All Classes') {
+            return true;
+        } else if (activeTab === 'Courses') {
+            // Filter to show only courses (group by unit/course)
+            return cls.courseCode && cls.courseName;
+        } else if (activeTab === 'Schedules') {
+            // Show all scheduled items
+            return cls.day && cls.startTime;
+        } else if (activeTab === 'Calendar View') {
+            // For calendar view, show all with valid dates
+            return cls.day && cls.startTime;
+        }
+        
+        return true;
+    });
 
     return (
         <div className="app-container">
