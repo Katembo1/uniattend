@@ -227,7 +227,7 @@ function Dashboard() {
                   className="btn btn-outline"
                   onClick={() => navigate('/activities')}
                 >
-                  View All
+                  📊 View All
                 </button>
               </div>
               
@@ -269,7 +269,7 @@ function Dashboard() {
                   className="btn btn-outline"
                   onClick={() => navigate('/schedules')}
                 >
-                  View Schedule
+                  📅 View Schedule
                 </button>
               </div>
               
