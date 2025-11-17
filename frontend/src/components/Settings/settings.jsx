@@ -2,12 +2,31 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../css/Styles.css';
 import Sidebar from '../Common/sidebar';
+import General from './general';
+import Notifications from './notification';
+import DataManagement from './data-management';
+import Appearance from './appearance';
 
 function Settings() {
     const [activeTab, setActiveTab] = useState('General');
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
+    };
+
+    const renderTabContent = () => {
+        switch(activeTab) {
+            case 'General':
+                return <General />;
+            case 'Notifications':
+                return <Notifications />;
+            case 'Data Management':
+                return <DataManagement />;
+            case 'Appearance':
+                return <Appearance />;
+            default:
+                return <General />;
+        }
     };
 
     return (
@@ -24,11 +43,12 @@ function Settings() {
                 
                 <div className="page-header">
                     <h1 className="page-title">System Settings</h1>
+                    <p className="page-subtitle">Configure system-wide settings and preferences</p>
                 </div>
                 
                 {/* Tabs */}
                 <div className="filter-tabs">
-                    {['General', 'Notifications', 'Integrations', 'Data Management', 'Appearance'].map((tab) => (
+                    {['General', 'Notifications', 'Data Management', 'Appearance'].map((tab) => (
                         <button
                             key={tab}
                             className={`filter-tab ${activeTab === tab ? 'active' : ''}`}
@@ -40,46 +60,9 @@ function Settings() {
                 </div>
                 
                 {/* Tab Content */}
-                {activeTab === 'General' && (
-                    <div className="card">
-                        <h2 className="card-title">General Settings</h2>
-                        
-                        <div className="setting-item">
-                            <div className="setting-details">
-                                <h3>Institution Details</h3>
-                                <p>Configure your university information and branding</p>
-                            </div>
-                            <button className="btn btn-primary">
-                                Edit
-                            </button>
-                        </div>
-                        
-                        <div className="setting-item">
-                            <div className="setting-details">
-                                <span className="setting-label">Institution Name</span>
-                                <strong>University of Technology</strong>
-                            </div>
-                            <button className="action-btn">📝</button>
-                        </div>
-                        
-                        <div className="setting-item">
-                            <div className="setting-details">
-                                <span className="setting-label">Academic Year</span>
-                                <strong>2023-2024</strong>
-                            </div>
-                            <button className="action-btn">📝</button>
-                        </div>
-                    </div>
-                )}
-                
-                {activeTab === 'Notifications' && (
-                    <div className="card">
-                        <h2 className="card-title">Notification Settings</h2>
-                        <p>Notification preferences will appear here</p>
-                    </div>
-                )}
-                
-                {/* Add similar sections for other tabs */}
+                <div className="card">
+                    {renderTabContent()}
+                </div>
             </div>
         </div>
     );
